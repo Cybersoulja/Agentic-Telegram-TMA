@@ -1,0 +1,5 @@
+# Set your Telegram Bot Token obtained from @BotFather
+TELEGRAM_BOT_TOKEN="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+
+# Override Mini App URL during local development (typically pointing to your local Vite dev server)
+MINI_APP_URL="http://localhost:5173"
