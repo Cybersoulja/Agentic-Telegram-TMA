@@ -50,7 +50,8 @@ export async function initDatabase(db?: D1Database): Promise<{ success: boolean;
 export async function getUserProfile(
   db?: D1Database,
   kv?: KVNamespace,
-  userId?: number
+  userId?: number,
+  ctx?: ExecutionContext
 ): Promise<UserProfileData | null> {
   if (!userId) return null;
 
@@ -73,8 +74,16 @@ export async function getUserProfile(
         .first<UserProfileData>();
 
       if (row && kv) {
-        // Populate cache for 3600s
-        ctxOrAsync(() => kv.put(`user:${userId}`, JSON.stringify(row), { expirationTtl: 3600 }));
+        // Populate cache for 3600s. Must be registered with ctx.waitUntil, otherwise the
+        // Worker runtime may terminate this background write once the response is returned.
+        const populateCache = kv
+          .put(`user:${userId}`, JSON.stringify(row), { expirationTtl: 3600 })
+          .catch((err) => console.warn("KV cache populate error:", err));
+        if (ctx) {
+          ctx.waitUntil(populateCache);
+        } else {
+          await populateCache;
+        }
       }
       return row || null;
     } catch (err) {
@@ -178,8 +187,4 @@ export async function logUserActivity(
   } catch (err) {
     console.warn("Log activity error:", err);
   }
-}
-
-function ctxOrAsync(fn: () => Promise<any>) {
-  fn().catch((err) => console.warn("Async background task error:", err));
 }

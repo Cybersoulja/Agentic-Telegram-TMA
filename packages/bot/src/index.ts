@@ -147,7 +147,7 @@ export default {
       if (!userId) {
         return new Response(JSON.stringify({ success: false, error: "userId query param required" }), { status: 400, headers: corsHeaders });
       }
-      const profile = await getUserProfile(env.TMA_DB, env.TMA_KV, userId);
+      const profile = await getUserProfile(env.TMA_DB, env.TMA_KV, userId, ctx);
       return new Response(JSON.stringify({ success: true, profile }), { status: 200, headers: corsHeaders });
     }
 
