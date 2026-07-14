@@ -8,3 +8,10 @@ MINI_APP_URL="http://localhost:5173"
 # N8N_URL="http://localhost:5678"
 # QWEN_TTS_URL="http://localhost:8080"
 # NOVELAI_AGENT_PATH="/path/to/your/novelai-lorebook-agent"
+
+# Optional: Craft Connect API server URL for the Quick Capture integration.
+# This URL is itself a bearer credential to your Craft space — treat it like a
+# secret. Get it from a Craft Connect link (Space Settings > Connect API) and
+# never commit a real value. In production, set it with `wrangler secret put
+# CRAFT_API_URL` instead of adding it to wrangler.jsonc.
+# CRAFT_API_URL="https://connect.craft.do/links/YOUR_LINK_ID/api/v1"

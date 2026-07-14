@@ -8,6 +8,7 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl }) 
   const [services, setServices] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [triggerStatus, setTriggerStatus] = useState<Record<string, string>>({});
+  const [craftText, setCraftText] = useState<string>("");
 
   useEffect(() => {
     fetchServicesStatus();
@@ -28,7 +29,7 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl }) 
     }
   };
 
-  const handleTrigger = async (serviceKey: string, action: string, payload?: any) => {
+  const handleTrigger = async (serviceKey: string, action: string, payload?: any): Promise<boolean> => {
     setTriggerStatus((prev) => ({ ...prev, [serviceKey]: "Running..." }));
     try {
       const res = await fetch(`${backendUrl}/api/integrations/trigger`, {
@@ -40,13 +41,22 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl }) 
       if (res.ok && data.success) {
         setTriggerStatus((prev) => ({ ...prev, [serviceKey]: `Success: ${JSON.stringify(data.result || data.response || "OK")}` }));
         window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
+        return true;
       } else {
         setTriggerStatus((prev) => ({ ...prev, [serviceKey]: `Failed: ${data.error || "Unknown error"}` }));
         window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("error");
+        return false;
       }
     } catch (err: any) {
       setTriggerStatus((prev) => ({ ...prev, [serviceKey]: `Error: ${err.message}` }));
+      return false;
     }
+  };
+
+  const handleCraftCapture = async (action: "quick_note" | "add_task") => {
+    if (!craftText.trim()) return;
+    const succeeded = await handleTrigger("craft", action, { text: craftText.trim() });
+    if (succeeded) setCraftText("");
   };
 
   return (
@@ -113,6 +123,33 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl }) 
               </button>
             </div>
             {triggerStatus["qwen_tts"] && <pre className="int-log">{triggerStatus["qwen_tts"]}</pre>}
+          </section>
+
+          {/* Craft Quick Capture */}
+          <section className="card integration-item">
+            <div className="int-header">
+              <span className={`int-badge ${services.craft?.status === "online" ? "online" : "offline"}`}>
+                {services.craft?.status?.toUpperCase() || "OFFLINE"}
+              </span>
+              <h3>✍️ Craft Quick Capture</h3>
+            </div>
+            <p className="description">{services.craft?.description || "Capture quick notes and tasks straight into your Craft space"}</p>
+            <div className="int-actions">
+              <input
+                type="text"
+                value={craftText}
+                onChange={(e) => setCraftText(e.target.value)}
+                placeholder="What's on your mind?"
+                className="select-input"
+              />
+              <button className="btn btn-primary btn-sm" onClick={() => handleCraftCapture("quick_note")} disabled={!craftText.trim()}>
+                📝 Save to Daily Note
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={() => handleCraftCapture("add_task")} disabled={!craftText.trim()}>
+                ✅ Add as Task
+              </button>
+            </div>
+            {triggerStatus["craft"] && <pre className="int-log">{triggerStatus["craft"]}</pre>}
           </section>
         </div>
       )}
