@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 
 interface IntegrationsTabProps {
   backendUrl: string;
+  initDataRaw: string;
 }
 
-export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl }) => {
+export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl, initDataRaw }) => {
   const [services, setServices] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [triggerStatus, setTriggerStatus] = useState<Record<string, string>>({});
@@ -35,7 +36,7 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl }) 
       const res = await fetch(`${backendUrl}/api/integrations/trigger`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service: serviceKey, action, payload }),
+        body: JSON.stringify({ service: serviceKey, action, payload, initData: initDataRaw }),
       });
       const data = await res.json();
       if (res.ok && data.success) {

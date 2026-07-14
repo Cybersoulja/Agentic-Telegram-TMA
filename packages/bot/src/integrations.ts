@@ -1,8 +1,11 @@
+import { verifyTelegramInitData } from "./telegramAuth.js";
+
 export interface IntegrationsEnv {
   N8N_URL?: string;
   QWEN_TTS_URL?: string;
   NOVELAI_AGENT_PATH?: string;
   CRAFT_API_URL?: string;
+  TELEGRAM_BOT_TOKEN?: string;
 }
 
 export async function handleIntegrationsRoute(
@@ -147,6 +150,22 @@ export async function handleIntegrationsRoute(
           return new Response(
             JSON.stringify({ success: false, service: "Craft", error: "CRAFT_API_URL is not configured." }),
             { status: 502, headers: corsHeaders }
+          );
+        }
+
+        // CRAFT_API_URL is a bearer credential to a real personal space — require a valid
+        // Telegram initData on every write so only genuine app launches can trigger one.
+        if (!env.TELEGRAM_BOT_TOKEN) {
+          return new Response(
+            JSON.stringify({ success: false, service: "Craft", error: "Server is not configured for Telegram auth." }),
+            { status: 500, headers: corsHeaders }
+          );
+        }
+        const initDataAuth = await verifyTelegramInitData(body.initData || "", env.TELEGRAM_BOT_TOKEN);
+        if (!initDataAuth.isValid) {
+          return new Response(
+            JSON.stringify({ success: false, service: "Craft", error: initDataAuth.error || "Unauthorized" }),
+            { status: 403, headers: corsHeaders }
           );
         }
 
