@@ -16,8 +16,12 @@ export async function initDatabase(db?: D1Database): Promise<{ success: boolean;
   }
 
   try {
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS users (
+    // D1Database.exec() splits its input on newlines and runs each line as its own
+    // statement, so a multi-line CREATE TABLE breaks it. Use prepare().run() instead,
+    // which executes the full statement regardless of embedded newlines.
+    await db
+      .prepare(
+        `CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY,
         first_name TEXT NOT NULL,
         last_name TEXT,
@@ -27,19 +31,22 @@ export async function initDatabase(db?: D1Database): Promise<{ success: boolean;
         theme_preference TEXT DEFAULT 'system',
         haptic_style TEXT DEFAULT 'medium',
         last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+      )`
+      )
+      .run();
 
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS activity_logs (
+    await db
+      .prepare(
+        `CREATE TABLE IF NOT EXISTS activity_logs (
         log_id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
         action TEXT NOT NULL,
         metadata TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
-      );
-    `);
+      )`
+      )
+      .run();
 
     return { success: true, message: "Database tables (users, activity_logs) initialized successfully." };
   } catch (err: any) {

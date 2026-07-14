@@ -44,7 +44,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setSaveStatus(`Saved successfully across ${data.message || "D1/KV"}!`);
+        setSaveStatus(data.message || "Saved successfully.");
         window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
         onRefreshProfile();
       } else {
