@@ -16,7 +16,7 @@ export async function handleIntegrationsRoute(
     // Check status of local / tunnel integrations
     const n8nUrl = env.N8N_URL || "http://localhost:5678";
     const qwenUrl = env.QWEN_TTS_URL || "http://localhost:8080";
-    const novelaiPath = env.NOVELAI_AGENT_PATH || "/Users/cybersoulja/novelai-workspace/novelai-lorebook-agent";
+    const novelaiPath = env.NOVELAI_AGENT_PATH || "<path-to-novelai-lorebook-agent>";
 
     const [n8nStatus, qwenStatus] = await Promise.all([
       checkHealth(n8nUrl + "/healthz", "n8n Workflow Hub"),

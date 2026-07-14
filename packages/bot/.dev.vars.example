@@ -3,3 +3,8 @@ TELEGRAM_BOT_TOKEN="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
 
 # Override Mini App URL during local development (typically pointing to your local Vite dev server)
 MINI_APP_URL="http://localhost:5173"
+
+# Optional: override the local integrations hub endpoints (see wrangler.jsonc for defaults)
+# N8N_URL="http://localhost:5678"
+# QWEN_TTS_URL="http://localhost:8080"
+# NOVELAI_AGENT_PATH="/path/to/your/novelai-lorebook-agent"

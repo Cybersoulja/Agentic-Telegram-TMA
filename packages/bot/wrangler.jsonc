@@ -10,7 +10,7 @@
     "MINI_APP_URL": "https://telegram-mini-app-frontend.pages.dev",
     "N8N_URL": "http://localhost:5678",
     "QWEN_TTS_URL": "http://localhost:8080",
-    "NOVELAI_AGENT_PATH": "/Users/cybersoulja/novelai-workspace/novelai-lorebook-agent"
+    "NOVELAI_AGENT_PATH": "<path-to-novelai-lorebook-agent>"
   },
   "kv_namespaces": [
     {
