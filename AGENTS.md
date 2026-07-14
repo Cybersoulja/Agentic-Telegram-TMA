@@ -60,6 +60,12 @@ This is a full-stack Telegram Mini App prototype using:
 
 ---
 
+## Git Workflow
+
+Documentation-only changes (`CLAUDE.md`, `AGENTS.md`, `README.md`, code comments) should be committed and pushed directly to `main` — do not open a pull request for these. Open a pull request for source code changes, or when wrapping up an end-of-day batch of work.
+
+---
+
 ## Development Guidelines for Agents
 
 ### 1. Telegram Client Theme Syncing
