@@ -141,11 +141,20 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl }) 
                 onChange={(e) => setCraftText(e.target.value)}
                 placeholder="What's on your mind?"
                 className="select-input"
+                disabled={triggerStatus["craft"] === "Running..."}
               />
-              <button className="btn btn-primary btn-sm" onClick={() => handleCraftCapture("quick_note")} disabled={!craftText.trim()}>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => handleCraftCapture("quick_note")}
+                disabled={!craftText.trim() || triggerStatus["craft"] === "Running..."}
+              >
                 📝 Save to Daily Note
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={() => handleCraftCapture("add_task")} disabled={!craftText.trim()}>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => handleCraftCapture("add_task")}
+                disabled={!craftText.trim() || triggerStatus["craft"] === "Running..."}
+              >
                 ✅ Add as Task
               </button>
             </div>

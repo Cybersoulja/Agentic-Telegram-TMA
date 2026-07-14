@@ -18,7 +18,7 @@ export async function handleIntegrationsRoute(
     const n8nUrl = env.N8N_URL || "http://localhost:5678";
     const qwenUrl = env.QWEN_TTS_URL || "http://localhost:8080";
     const novelaiPath = env.NOVELAI_AGENT_PATH || "<path-to-novelai-lorebook-agent>";
-    const craftUrl = env.CRAFT_API_URL;
+    const craftUrl = env.CRAFT_API_URL?.replace(/\/$/, "");
 
     const [n8nStatus, qwenStatus, craftStatus] = await Promise.all([
       checkHealth(n8nUrl + "/healthz", "n8n Workflow Hub"),
@@ -142,7 +142,7 @@ export async function handleIntegrationsRoute(
       }
 
       if (service === "craft") {
-        const craftUrl = env.CRAFT_API_URL;
+        const craftUrl = env.CRAFT_API_URL?.replace(/\/$/, "");
         if (!craftUrl) {
           return new Response(
             JSON.stringify({ success: false, service: "Craft", error: "CRAFT_API_URL is not configured." }),
@@ -170,7 +170,13 @@ export async function handleIntegrationsRoute(
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(requestBody)
           });
-          const data = await resp.json();
+          const responseText = await resp.text();
+          let data: any;
+          try {
+            data = JSON.parse(responseText);
+          } catch {
+            data = { rawResponse: responseText };
+          }
           return new Response(
             JSON.stringify({
               success: resp.ok,
