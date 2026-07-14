@@ -33,6 +33,10 @@ npm run check-types --workspace=apps/frontend  # tsc -b
 
 There is no test suite in this repo currently.
 
+## Git workflow
+
+Documentation-only changes (`CLAUDE.md`, `AGENTS.md`, `README.md`, code comments) should be committed and pushed directly to `main` — do not open a pull request for these. Open a pull request for source code changes, or when wrapping up an end-of-day batch of work.
+
 ### Local environment setup
 Create `packages/bot/.dev.vars` (gitignored) from `packages/bot/.dev.vars.example`:
 ```ini
