@@ -152,6 +152,13 @@ export async function handleIntegrationsRoute(
           );
         }
 
+        if (action !== "mirror" && action !== "leech") {
+          return new Response(
+            JSON.stringify({ success: false, error: `Unknown mirror_leech action: ${action}` }),
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
         const link = payload?.url;
         if (!link) {
           return new Response(
