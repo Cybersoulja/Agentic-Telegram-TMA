@@ -2,6 +2,7 @@ export interface IntegrationsEnv {
   N8N_URL?: string;
   QWEN_TTS_URL?: string;
   NOVELAI_AGENT_PATH?: string;
+  MIRROR_LEECH_URL?: string;
 }
 
 export async function handleIntegrationsRoute(
@@ -17,10 +18,12 @@ export async function handleIntegrationsRoute(
     const n8nUrl = env.N8N_URL || "http://localhost:5678";
     const qwenUrl = env.QWEN_TTS_URL || "http://localhost:8080";
     const novelaiPath = env.NOVELAI_AGENT_PATH || "<path-to-novelai-lorebook-agent>";
+    const mirrorLeechUrl = env.MIRROR_LEECH_URL || "http://localhost:8095";
 
-    const [n8nStatus, qwenStatus] = await Promise.all([
+    const [n8nStatus, qwenStatus, mirrorLeechStatus] = await Promise.all([
       checkHealth(n8nUrl + "/healthz", "n8n Workflow Hub"),
       checkHealth(qwenUrl + "/docs", "Qwen3-TTS Studio"),
+      checkHealth(mirrorLeechUrl + "/", "Mirror-Leech Bot"),
     ]);
 
     return new Response(
@@ -47,6 +50,13 @@ export async function handleIntegrationsRoute(
             url: qwenUrl,
             message: qwenStatus.message,
             description: "Apple Silicon local voice cloning & TTS API"
+          },
+          mirror_leech: {
+            name: "Mirror-Leech Bot",
+            status: mirrorLeechStatus.online ? "online" : "offline",
+            url: mirrorLeechUrl,
+            message: mirrorLeechStatus.message,
+            description: "Remote-download & torrent/leech relay (aria2c/qBittorrent/yt-dlp)"
           }
         }
       }),
@@ -123,6 +133,55 @@ export async function handleIntegrationsRoute(
             text: payload?.text || "Welcome to the Space Age Hustle Mini App.",
             audio_url: `${qwenUrl}/static/preview.wav`,
             status: "ready"
+          }),
+          { status: 200, headers: corsHeaders }
+        );
+      }
+
+      if (service === "mirror_leech") {
+        if (action === "status") {
+          // Mock task queue snapshot for the Mirror-Leech Bot
+          return new Response(
+            JSON.stringify({
+              success: true,
+              service: "Mirror-Leech Bot",
+              action: "status",
+              result: { active_tasks: [], queued: 0 }
+            }),
+            { status: 200, headers: corsHeaders }
+          );
+        }
+
+        if (action !== "mirror" && action !== "leech") {
+          return new Response(
+            JSON.stringify({ success: false, error: `Unknown mirror_leech action: ${action}` }),
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
+        const link = payload?.url;
+        if (!link) {
+          return new Response(
+            JSON.stringify({ success: false, error: "payload.url is required to start a mirror/leech task" }),
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
+        // Mock / illustrative stub for mirror & leech task submission
+        const isLeech = action === "leech";
+        return new Response(
+          JSON.stringify({
+            success: true,
+            service: "Mirror-Leech Bot",
+            action: isLeech ? "leech" : "mirror",
+            result: {
+              status: "queued",
+              task_id: `ML-${Date.now().toString(36).toUpperCase()}`,
+              link,
+              engine: isLeech ? "yt-dlp" : "aria2c",
+              destination: isLeech ? "telegram" : "gdrive",
+              timestamp: new Date().toISOString()
+            }
           }),
           { status: 200, headers: corsHeaders }
         );
