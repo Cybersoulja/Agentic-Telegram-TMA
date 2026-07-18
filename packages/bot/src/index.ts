@@ -1,7 +1,8 @@
 import { initDatabase, getUserProfile, saveUserProfile, logUserActivity, UserProfileData } from "./db.js";
 import { handleIntegrationsRoute, IntegrationsEnv } from "./integrations.js";
+import { runAgentChain, formatAgentMessage, AgentEnv } from "./agent.js";
 
-export interface Env extends IntegrationsEnv {
+export interface Env extends IntegrationsEnv, AgentEnv {
   TELEGRAM_BOT_TOKEN?: string;
   MINI_APP_URL: string;
   TMA_KV?: KVNamespace;
@@ -85,7 +86,7 @@ export default {
 
       try {
         const update: any = await request.json();
-        ctx.waitUntil(handleTelegramUpdate(update, token, env.MINI_APP_URL, env.TMA_DB));
+        ctx.waitUntil(handleTelegramUpdate(update, token, env.MINI_APP_URL, env.TMA_DB, env.GEMINI_API_KEY));
         return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
       } catch (err: any) {
         console.error("Error processing update:", err);
@@ -175,14 +176,14 @@ export default {
   },
 };
 
-async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: string, db?: D1Database) {
+async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: string, db?: D1Database, geminiApiKey?: string) {
   if (update.message && update.message.text) {
     const chatId = update.message.chat.id;
     const text = update.message.text;
 
     if (text.startsWith("/start")) {
       const welcomeText = "👋 Welcome to your Telegram Mini App & Oneseco Media Hub!\n\nClick below to open the multi-tab control center.";
-      
+
       const payload = {
         chat_id: chatId,
         text: welcomeText,
@@ -207,8 +208,59 @@ async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: s
       if (update.message.from && db) {
         logUserActivity(db, update.message.from.id, "bot_start", { chat_id: chatId });
       }
+      return;
+    }
+
+    if (geminiApiKey) {
+      let statusMessageId: number | undefined;
+      try {
+        const sent = await sendTelegramMessage(chatId, "<i>📡 Establishing uplink...</i>", botToken);
+        statusMessageId = sent?.result?.message_id;
+      } catch (err: any) {
+        console.error("Failed to send agent status message:", err);
+      }
+
+      try {
+        const result = await runAgentChain(text, geminiApiKey);
+        const formatted = formatAgentMessage(result);
+        if (statusMessageId) {
+          await editTelegramMessage(chatId, statusMessageId, formatted, botToken);
+        } else {
+          await sendTelegramMessage(chatId, formatted, botToken);
+        }
+        if (update.message.from && db) {
+          logUserActivity(db, update.message.from.id, "agent_chat", { chat_id: chatId, intent: result.intent });
+        }
+      } catch (err: any) {
+        console.error("Agent chain error:", err);
+        const failureText = "<i>⚠️ Uplink lost. Connection to Mars habitat timed out.</i>";
+        const notify = statusMessageId
+          ? editTelegramMessage(chatId, statusMessageId, failureText, botToken)
+          : sendTelegramMessage(chatId, failureText, botToken);
+        await notify.catch((notifyErr: any) => console.error("Failed to send agent failure notice:", notifyErr));
+      }
     }
   }
+}
+
+async function sendTelegramMessage(chatId: number, text: string, botToken: string): Promise<any> {
+  const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" })
+  });
+  if (!res.ok) throw new Error(`Telegram sendMessage error: ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+async function editTelegramMessage(chatId: number, messageId: number, text: string, botToken: string): Promise<any> {
+  const res = await fetch(`https://api.telegram.org/bot${botToken}/editMessageText`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" })
+  });
+  if (!res.ok) throw new Error(`Telegram editMessageText error: ${res.status} ${res.statusText}`);
+  return res.json();
 }
 
 async function verifyTelegramInitData(
