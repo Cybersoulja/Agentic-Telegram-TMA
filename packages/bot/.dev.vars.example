@@ -9,3 +9,7 @@ MINI_APP_URL="http://localhost:5173"
 # QWEN_TTS_URL="http://localhost:8080"
 # NOVELAI_AGENT_PATH="/path/to/your/novelai-lorebook-agent"
 # MIRROR_LEECH_URL="http://localhost:8095"
+
+# Optional: enables the Trill Astro Buzz agent chain (Intent -> Oracle -> Reflection -> Narrative)
+# for any non-/start text message. Without it, the bot only responds to /start.
+# GEMINI_API_KEY="your_gemini_api_key"

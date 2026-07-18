@@ -1,7 +1,8 @@
 import { initDatabase, getUserProfile, saveUserProfile, logUserActivity, UserProfileData } from "./db.js";
 import { handleIntegrationsRoute, IntegrationsEnv } from "./integrations.js";
+import { runAgentChain, formatAgentMessage, AgentEnv } from "./agent.js";
 
-export interface Env extends IntegrationsEnv {
+export interface Env extends IntegrationsEnv, AgentEnv {
   TELEGRAM_BOT_TOKEN?: string;
   MINI_APP_URL: string;
   TMA_KV?: KVNamespace;
@@ -85,7 +86,7 @@ export default {
 
       try {
         const update: any = await request.json();
-        ctx.waitUntil(handleTelegramUpdate(update, token, env.MINI_APP_URL, env.TMA_DB));
+        ctx.waitUntil(handleTelegramUpdate(update, token, env.MINI_APP_URL, env.TMA_DB, env.GEMINI_API_KEY));
         return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
       } catch (err: any) {
         console.error("Error processing update:", err);
@@ -175,14 +176,14 @@ export default {
   },
 };
 
-async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: string, db?: D1Database) {
+async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: string, db?: D1Database, geminiApiKey?: string) {
   if (update.message && update.message.text) {
     const chatId = update.message.chat.id;
     const text = update.message.text;
 
     if (text.startsWith("/start")) {
       const welcomeText = "👋 Welcome to your Telegram Mini App & Oneseco Media Hub!\n\nClick below to open the multi-tab control center.";
-      
+
       const payload = {
         chat_id: chatId,
         text: welcomeText,
@@ -207,8 +208,30 @@ async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: s
       if (update.message.from && db) {
         logUserActivity(db, update.message.from.id, "bot_start", { chat_id: chatId });
       }
+      return;
+    }
+
+    if (geminiApiKey) {
+      await sendTelegramMessage(chatId, "<i>📡 Establishing uplink...</i>", botToken);
+      try {
+        const result = await runAgentChain(text, geminiApiKey);
+        await sendTelegramMessage(chatId, formatAgentMessage(result), botToken);
+        if (update.message.from && db) {
+          logUserActivity(db, update.message.from.id, "agent_chat", { chat_id: chatId, intent: result.intent });
+        }
+      } catch (err: any) {
+        console.error("Agent chain error:", err);
+      }
     }
   }
+}
+
+async function sendTelegramMessage(chatId: number, text: string, botToken: string) {
+  await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" })
+  });
 }
 
 async function verifyTelegramInitData(
