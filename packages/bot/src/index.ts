@@ -212,26 +212,55 @@ async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: s
     }
 
     if (geminiApiKey) {
-      await sendTelegramMessage(chatId, "<i>📡 Establishing uplink...</i>", botToken);
+      let statusMessageId: number | undefined;
+      try {
+        const sent = await sendTelegramMessage(chatId, "<i>📡 Establishing uplink...</i>", botToken);
+        statusMessageId = sent?.result?.message_id;
+      } catch (err: any) {
+        console.error("Failed to send agent status message:", err);
+      }
+
       try {
         const result = await runAgentChain(text, geminiApiKey);
-        await sendTelegramMessage(chatId, formatAgentMessage(result), botToken);
+        const formatted = formatAgentMessage(result);
+        if (statusMessageId) {
+          await editTelegramMessage(chatId, statusMessageId, formatted, botToken);
+        } else {
+          await sendTelegramMessage(chatId, formatted, botToken);
+        }
         if (update.message.from && db) {
           logUserActivity(db, update.message.from.id, "agent_chat", { chat_id: chatId, intent: result.intent });
         }
       } catch (err: any) {
         console.error("Agent chain error:", err);
+        const failureText = "<i>⚠️ Uplink lost. Connection to Mars habitat timed out.</i>";
+        const notify = statusMessageId
+          ? editTelegramMessage(chatId, statusMessageId, failureText, botToken)
+          : sendTelegramMessage(chatId, failureText, botToken);
+        await notify.catch((notifyErr: any) => console.error("Failed to send agent failure notice:", notifyErr));
       }
     }
   }
 }
 
-async function sendTelegramMessage(chatId: number, text: string, botToken: string) {
-  await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+async function sendTelegramMessage(chatId: number, text: string, botToken: string): Promise<any> {
+  const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" })
   });
+  if (!res.ok) throw new Error(`Telegram sendMessage error: ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+async function editTelegramMessage(chatId: number, messageId: number, text: string, botToken: string): Promise<any> {
+  const res = await fetch(`https://api.telegram.org/bot${botToken}/editMessageText`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, message_id: messageId, text, parse_mode: "HTML" })
+  });
+  if (!res.ok) throw new Error(`Telegram editMessageText error: ${res.status} ${res.statusText}`);
+  return res.json();
 }
 
 async function verifyTelegramInitData(
