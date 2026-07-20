@@ -11,7 +11,8 @@
     "N8N_URL": "http://localhost:5678",
     "QWEN_TTS_URL": "http://localhost:8080",
     "NOVELAI_AGENT_PATH": "<path-to-novelai-lorebook-agent>",
-    "MIRROR_LEECH_URL": "http://localhost:8095"
+    "MIRROR_LEECH_URL": "http://localhost:8095",
+    "BLUESKY_PDS_URL": "http://localhost:2583"
   },
   "kv_namespaces": [
     {
