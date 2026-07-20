@@ -203,18 +203,29 @@ export async function handleIntegrationsRoute(
         if (action === "describe") {
           // Real proxy: com.atproto.server.describeServer is a safe, unauthenticated GET
           try {
-            const resp = await fetch(`${blueskyPdsUrl}/xrpc/com.atproto.server.describeServer`);
-            const data = await resp.json();
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
+            const resp = await fetch(`${blueskyPdsUrl}/xrpc/com.atproto.server.describeServer`, {
+              signal: controller.signal
+            });
+            clearTimeout(timeout);
+
+            const contentType = resp.headers.get("content-type") || "";
+            const data = contentType.includes("application/json") ? await resp.json() : { error: await resp.text() };
+
             return new Response(
               JSON.stringify({ success: resp.ok, service: "Bluesky PDS", action: "describe", result: data }),
               { status: resp.ok ? 200 : 502, headers: corsHeaders }
             );
           } catch (err: any) {
+            const isTimeout = err.name === "AbortError";
             return new Response(
               JSON.stringify({
                 success: false,
                 service: "Bluesky PDS",
-                error: `Could not reach PDS at ${blueskyPdsUrl}: ${err.message}`
+                error: isTimeout
+                  ? `Request to PDS at ${blueskyPdsUrl} timed out (5s)`
+                  : `Could not reach PDS at ${blueskyPdsUrl}: ${err.message}`
               }),
               { status: 502, headers: corsHeaders }
             );
