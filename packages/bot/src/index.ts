@@ -1,4 +1,4 @@
-import { initDatabase, getUserProfile, saveUserProfile, logUserActivity, getLatestHighTierNarrative, saveMissionLog, UserProfileData } from "./db.js";
+import { initDatabase, getUserProfile, saveUserProfile, logUserActivity, ensureUserExists, getLatestHighTierNarrative, saveMissionLog, UserProfileData } from "./db.js";
 import { handleIntegrationsRoute, IntegrationsEnv, mockQwenAudioUrl, mockBlueskyPostUri } from "./integrations.js";
 import { runAgentChain, formatAgentMessage, AgentEnv } from "./agent.js";
 
@@ -211,6 +211,12 @@ async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: s
     const chatId = update.message.chat.id;
     const text = update.message.text;
 
+    if (update.message.from && db) {
+      // activity_logs.user_id has a foreign key to users.id — ensure the row exists before
+      // any logUserActivity call below, or those inserts fail silently.
+      await ensureUserExists(db, update.message.from);
+    }
+
     if (text.startsWith("/start")) {
       const welcomeText = "👋 Welcome to your Telegram Mini App & Oneseco Media Hub!\n\nClick below to open the multi-tab control center.";
 
@@ -236,7 +242,7 @@ async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: s
       });
 
       if (update.message.from && db) {
-        logUserActivity(db, update.message.from.id, "bot_start", { chat_id: chatId });
+        await logUserActivity(db, update.message.from.id, "bot_start", { chat_id: chatId });
       }
       return;
     }
@@ -259,7 +265,7 @@ async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: s
           await sendTelegramMessage(chatId, formatted, botToken);
         }
         if (update.message.from && db) {
-          logUserActivity(db, update.message.from.id, "agent_chat", {
+          await logUserActivity(db, update.message.from.id, "agent_chat", {
             chat_id: chatId,
             intent: result.intent,
             tier: result.oracle?.tier ?? null,

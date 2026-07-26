@@ -208,6 +208,24 @@ export async function logUserActivity(
   }
 }
 
+/**
+ * Ensures a `users` row exists for a Telegram user before activity is logged against them —
+ * `activity_logs.user_id` has a foreign key to `users.id`, and Telegram message events don't
+ * otherwise guarantee a profile row exists yet. Uses ON CONFLICT DO NOTHING so it never
+ * overwrites an existing saved profile (unlike saveUserProfile, which is a full upsert).
+ */
+export async function ensureUserExists(db?: D1Database, user?: { id?: number; first_name?: string }): Promise<void> {
+  if (!db || !user?.id) return;
+  try {
+    await db
+      .prepare("INSERT INTO users (id, first_name) VALUES (?, ?) ON CONFLICT(id) DO NOTHING")
+      .bind(user.id, user.first_name || "User")
+      .run();
+  } catch (err) {
+    console.warn("ensureUserExists error:", err);
+  }
+}
+
 /** Reads the most recent `agent_chat` activity log whose logged Oracle tier meets `minTier`. */
 export async function getLatestHighTierNarrative(
   db?: D1Database,

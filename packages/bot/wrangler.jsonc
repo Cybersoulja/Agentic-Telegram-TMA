@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "telegram-mini-app-bot",
+  "name": "trillastrob",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-01",
   "compatibility_flags": [
@@ -14,6 +14,10 @@
     "MIRROR_LEECH_URL": "http://localhost:8095",
     "BLUESKY_PDS_URL": "http://localhost:2583"
   },
+  // TODO: "tma-kv-dev" and "tma-db-dev" below are local-dev-only placeholders — `wrangler dev`
+  // doesn't validate them, but a real `wrangler deploy` (e.g. via Workers Builds) will reject
+  // them as invalid resource IDs. Swap in the real KV namespace id / D1 database_id once those
+  // are provisioned in the Cloudflare account this Worker deploys to.
   "kv_namespaces": [
     {
       "binding": "TMA_KV",
