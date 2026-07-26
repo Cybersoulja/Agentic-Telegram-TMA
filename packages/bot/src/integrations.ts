@@ -3,6 +3,7 @@ export interface IntegrationsEnv {
   QWEN_TTS_URL?: string;
   NOVELAI_AGENT_PATH?: string;
   MIRROR_LEECH_URL?: string;
+  BLUESKY_PDS_URL?: string;
 }
 
 export async function handleIntegrationsRoute(
@@ -19,11 +20,13 @@ export async function handleIntegrationsRoute(
     const qwenUrl = env.QWEN_TTS_URL || "http://localhost:8080";
     const novelaiPath = env.NOVELAI_AGENT_PATH || "<path-to-novelai-lorebook-agent>";
     const mirrorLeechUrl = env.MIRROR_LEECH_URL || "http://localhost:8095";
+    const blueskyPdsUrl = env.BLUESKY_PDS_URL || "http://localhost:2583";
 
-    const [n8nStatus, qwenStatus, mirrorLeechStatus] = await Promise.all([
+    const [n8nStatus, qwenStatus, mirrorLeechStatus, blueskyStatus] = await Promise.all([
       checkHealth(n8nUrl + "/healthz", "n8n Workflow Hub"),
       checkHealth(qwenUrl + "/docs", "Qwen3-TTS Studio"),
       checkHealth(mirrorLeechUrl + "/", "Mirror-Leech Bot"),
+      checkHealth(blueskyPdsUrl + "/xrpc/_health", "Bluesky PDS"),
     ]);
 
     return new Response(
@@ -57,6 +60,13 @@ export async function handleIntegrationsRoute(
             url: mirrorLeechUrl,
             message: mirrorLeechStatus.message,
             description: "Remote-download & torrent/leech relay (aria2c/qBittorrent/yt-dlp)"
+          },
+          bluesky_pds: {
+            name: "Bluesky PDS",
+            status: blueskyStatus.online ? "online" : "offline",
+            url: blueskyPdsUrl,
+            message: blueskyStatus.message,
+            description: "Self-hosted AT Protocol Personal Data Server"
           }
         }
       }),
@@ -180,6 +190,74 @@ export async function handleIntegrationsRoute(
               link,
               engine: isLeech ? "yt-dlp" : "aria2c",
               destination: isLeech ? "telegram" : "gdrive",
+              timestamp: new Date().toISOString()
+            }
+          }),
+          { status: 200, headers: corsHeaders }
+        );
+      }
+
+      if (service === "bluesky_pds") {
+        const blueskyPdsUrl = env.BLUESKY_PDS_URL || "http://localhost:2583";
+
+        if (action === "describe") {
+          // Real proxy: com.atproto.server.describeServer is a safe, unauthenticated GET
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
+            const resp = await fetch(`${blueskyPdsUrl}/xrpc/com.atproto.server.describeServer`, {
+              signal: controller.signal
+            });
+            clearTimeout(timeout);
+
+            const contentType = resp.headers.get("content-type") || "";
+            const data = contentType.includes("application/json") ? await resp.json() : { error: await resp.text() };
+
+            return new Response(
+              JSON.stringify({ success: resp.ok, service: "Bluesky PDS", action: "describe", result: data }),
+              { status: resp.ok ? 200 : 502, headers: corsHeaders }
+            );
+          } catch (err: any) {
+            const isTimeout = err.name === "AbortError";
+            return new Response(
+              JSON.stringify({
+                success: false,
+                service: "Bluesky PDS",
+                error: isTimeout
+                  ? `Request to PDS at ${blueskyPdsUrl} timed out (5s)`
+                  : `Could not reach PDS at ${blueskyPdsUrl}: ${err.message}`
+              }),
+              { status: 502, headers: corsHeaders }
+            );
+          }
+        }
+
+        if (action !== "post") {
+          return new Response(
+            JSON.stringify({ success: false, error: `Unknown bluesky_pds action: ${action}` }),
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
+        const text = payload?.text;
+        if (!text) {
+          return new Response(
+            JSON.stringify({ success: false, error: "payload.text is required to create a post" }),
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
+        // Mock / illustrative stub — a real post requires an authenticated session (com.atproto.server.createSession)
+        // and a com.atproto.repo.createRecord call, which is out of scope for this local/dev stub.
+        return new Response(
+          JSON.stringify({
+            success: true,
+            service: "Bluesky PDS",
+            action: "post",
+            result: {
+              status: "queued",
+              uri: `at://did:plc:stub/app.bsky.feed.post/${Date.now().toString(36)}`,
+              text,
               timestamp: new Date().toISOString()
             }
           }),

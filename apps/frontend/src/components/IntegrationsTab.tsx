@@ -9,6 +9,7 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl }) 
   const [loading, setLoading] = useState<boolean>(true);
   const [triggerStatus, setTriggerStatus] = useState<Record<string, string>>({});
   const [mirrorLeechLink, setMirrorLeechLink] = useState<string>("");
+  const [blueskyPostText, setBlueskyPostText] = useState<string>("");
 
   useEffect(() => {
     fetchServicesStatus();
@@ -157,6 +158,42 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl }) 
               </button>
             </div>
             {triggerStatus["mirror_leech"] && <pre className="int-log">{triggerStatus["mirror_leech"]}</pre>}
+          </section>
+
+          {/* Bluesky PDS */}
+          <section className="card integration-item">
+            <div className="int-header">
+              <span className={`int-badge ${services.bluesky_pds?.status === "online" ? "online" : "offline"}`}>
+                {services.bluesky_pds?.status?.toUpperCase() || "OFFLINE"}
+              </span>
+              <h3>🦋 Bluesky PDS</h3>
+            </div>
+            <p className="description">{services.bluesky_pds?.description || "Self-hosted AT Protocol Personal Data Server"}</p>
+            <div className="url-form mt-2">
+              <input
+                className="select-input"
+                type="text"
+                placeholder="What's happening?"
+                value={blueskyPostText}
+                onChange={(e) => setBlueskyPostText(e.target.value)}
+              />
+            </div>
+            <div className="int-actions mt-2">
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => handleTrigger("bluesky_pds", "describe")}
+              >
+                🔍 Describe Server
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                disabled={!blueskyPostText}
+                onClick={() => handleTrigger("bluesky_pds", "post", { text: blueskyPostText })}
+              >
+                🦋 Post
+              </button>
+            </div>
+            {triggerStatus["bluesky_pds"] && <pre className="int-log">{triggerStatus["bluesky_pds"]}</pre>}
           </section>
         </div>
       )}
