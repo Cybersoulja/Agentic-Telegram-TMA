@@ -48,7 +48,19 @@ export async function initDatabase(db?: D1Database): Promise<{ success: boolean;
       )
       .run();
 
-    return { success: true, message: "Database tables (users, activity_logs) initialized successfully." };
+    await db
+      .prepare(
+        `CREATE TABLE IF NOT EXISTS mission_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        narrative TEXT NOT NULL,
+        audio_url TEXT,
+        bluesky_uri TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`
+      )
+      .run();
+
+    return { success: true, message: "Database tables (users, activity_logs, mission_logs) initialized successfully." };
   } catch (err: any) {
     return { success: false, message: `Failed to initialize D1 tables: ${err.message}` };
   }
@@ -193,5 +205,72 @@ export async function logUserActivity(
       .run();
   } catch (err) {
     console.warn("Log activity error:", err);
+  }
+}
+
+/**
+ * Ensures a `users` row exists for a Telegram user before activity is logged against them —
+ * `activity_logs.user_id` has a foreign key to `users.id`, and Telegram message events don't
+ * otherwise guarantee a profile row exists yet. Uses ON CONFLICT DO NOTHING so it never
+ * overwrites an existing saved profile (unlike saveUserProfile, which is a full upsert).
+ */
+export async function ensureUserExists(db?: D1Database, user?: { id?: number; first_name?: string }): Promise<void> {
+  if (!db || !user?.id) return;
+  try {
+    await db
+      .prepare("INSERT INTO users (id, first_name) VALUES (?, ?) ON CONFLICT(id) DO NOTHING")
+      .bind(user.id, user.first_name || "User")
+      .run();
+  } catch (err) {
+    console.warn("ensureUserExists error:", err);
+  }
+}
+
+/** Reads the most recent `agent_chat` activity log whose logged Oracle tier meets `minTier`. */
+export async function getLatestHighTierNarrative(
+  db?: D1Database,
+  minTier: number = 5
+): Promise<{ narrative: string; tier: number } | null> {
+  if (!db) return null;
+  try {
+    const row = await db
+      .prepare(
+        `SELECT metadata FROM activity_logs
+         WHERE action = 'agent_chat' AND CAST(json_extract(metadata, '$.tier') AS INTEGER) >= ?
+         ORDER BY created_at DESC LIMIT 1`
+      )
+      .bind(minTier)
+      .first<{ metadata: string }>();
+    if (!row?.metadata) return null;
+    const parsed = JSON.parse(row.metadata);
+    if (!parsed.narrative) return null;
+    return { narrative: parsed.narrative, tier: parsed.tier };
+  } catch (err) {
+    console.warn("getLatestHighTierNarrative error:", err);
+    return null;
+  }
+}
+
+export interface MissionLogEntry {
+  narrative: string;
+  audio_url: string;
+  bluesky_uri: string;
+}
+
+export async function saveMissionLog(
+  db: D1Database | undefined,
+  entry: MissionLogEntry
+): Promise<{ success: boolean; message: string }> {
+  if (!db) {
+    return { success: false, message: "D1 database binding (TMA_DB) is not configured or available." };
+  }
+  try {
+    await db
+      .prepare("INSERT INTO mission_logs (narrative, audio_url, bluesky_uri) VALUES (?, ?, ?)")
+      .bind(entry.narrative, entry.audio_url, entry.bluesky_uri)
+      .run();
+    return { success: true, message: "Mission log saved." };
+  } catch (err: any) {
+    return { success: false, message: `Failed to save mission log: ${err.message}` };
   }
 }

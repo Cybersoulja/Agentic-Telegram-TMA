@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "build": "echo 'No build step required — wrangler deploy bundles the Worker itself.'",
     "check-types": "tsc --noEmit"
   },
   "devDependencies": {

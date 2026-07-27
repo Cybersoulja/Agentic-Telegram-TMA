@@ -141,7 +141,7 @@ export async function handleIntegrationsRoute(
             action: action || "synthesize_preview",
             voice: payload?.voice || "default_trill",
             text: payload?.text || "Welcome to the Space Age Hustle Mini App.",
-            audio_url: `${qwenUrl}/static/preview.wav`,
+            audio_url: mockQwenAudioUrl(qwenUrl),
             status: "ready"
           }),
           { status: 200, headers: corsHeaders }
@@ -256,7 +256,7 @@ export async function handleIntegrationsRoute(
             action: "post",
             result: {
               status: "queued",
-              uri: `at://did:plc:stub/app.bsky.feed.post/${Date.now().toString(36)}`,
+              uri: mockBlueskyPostUri(),
               text,
               timestamp: new Date().toISOString()
             }
@@ -299,4 +299,14 @@ async function checkHealth(url: string, serviceName: string): Promise<{ online: 
       message: err.name === "AbortError" ? "Connection timed out (2s)" : "Server offline or unreachable"
     };
   }
+}
+
+/** Shared mock shape for a Qwen3-TTS synthesis result — reused by the qwen_tts trigger and mission-log orchestration. */
+export function mockQwenAudioUrl(qwenUrl: string): string {
+  return `${qwenUrl}/static/preview.wav`;
+}
+
+/** Shared mock shape for a Bluesky post's at:// URI — reused by the bluesky_pds trigger and mission-log orchestration. */
+export function mockBlueskyPostUri(): string {
+  return `at://did:plc:stub/app.bsky.feed.post/${Date.now().toString(36)}`;
 }

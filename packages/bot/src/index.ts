@@ -1,5 +1,5 @@
-import { initDatabase, getUserProfile, saveUserProfile, logUserActivity, UserProfileData } from "./db.js";
-import { handleIntegrationsRoute, IntegrationsEnv } from "./integrations.js";
+import { initDatabase, getUserProfile, saveUserProfile, logUserActivity, ensureUserExists, getLatestHighTierNarrative, saveMissionLog, UserProfileData } from "./db.js";
+import { handleIntegrationsRoute, IntegrationsEnv, mockQwenAudioUrl, mockBlueskyPostUri } from "./integrations.js";
 import { runAgentChain, formatAgentMessage, AgentEnv } from "./agent.js";
 
 export interface Env extends IntegrationsEnv, AgentEnv {
@@ -39,6 +39,7 @@ export default {
             setup: "/setup-webhook (GET) - Automatically register webhook with Telegram",
             dbInit: "/api/db/init (GET) - Initialize D1 database tables",
             profile: "/api/profile (GET/POST) - Get/Save user preferences in D1 and KV",
+            missionLog: "/api/mission-log (POST) - Broadcast the latest Tier 5 Oracle narrative via TTS + Bluesky",
             integrations: "/api/integrations/* - Oneseco Hub proxy routes"
           },
         }),
@@ -165,6 +166,35 @@ export default {
       }
     }
 
+    if (url.pathname === "/api/mission-log" && request.method === "POST") {
+      const latest = await getLatestHighTierNarrative(env.TMA_DB, 5);
+      if (!latest) {
+        return new Response(
+          JSON.stringify({ success: false, error: "No Tier 5 Oracle narrative logged yet — trigger one via the Telegram bot first." }),
+          { status: 404, headers: corsHeaders }
+        );
+      }
+
+      const qwenUrl = env.QWEN_TTS_URL || "http://localhost:8080";
+      const audioUrl = mockQwenAudioUrl(qwenUrl);
+      const blueskyUri = mockBlueskyPostUri();
+
+      const saveResult = await saveMissionLog(env.TMA_DB, {
+        narrative: latest.narrative,
+        audio_url: audioUrl,
+        bluesky_uri: blueskyUri
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: saveResult.success,
+          error: saveResult.success ? undefined : saveResult.message,
+          result: { narrative: latest.narrative, tier: latest.tier, audio_url: audioUrl, bluesky_uri: blueskyUri }
+        }),
+        { status: saveResult.success ? 200 : 500, headers: corsHeaders }
+      );
+    }
+
     if (url.pathname.startsWith("/api/integrations/")) {
       return handleIntegrationsRoute(request, env, url, corsHeaders);
     }
@@ -180,6 +210,12 @@ async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: s
   if (update.message && update.message.text) {
     const chatId = update.message.chat.id;
     const text = update.message.text;
+
+    if (update.message.from && db) {
+      // activity_logs.user_id has a foreign key to users.id — ensure the row exists before
+      // any logUserActivity call below, or those inserts fail silently.
+      await ensureUserExists(db, update.message.from);
+    }
 
     if (text.startsWith("/start")) {
       const welcomeText = "👋 Welcome to your Telegram Mini App & Oneseco Media Hub!\n\nClick below to open the multi-tab control center.";
@@ -206,7 +242,7 @@ async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: s
       });
 
       if (update.message.from && db) {
-        logUserActivity(db, update.message.from.id, "bot_start", { chat_id: chatId });
+        await logUserActivity(db, update.message.from.id, "bot_start", { chat_id: chatId });
       }
       return;
     }
@@ -229,7 +265,12 @@ async function handleTelegramUpdate(update: any, botToken: string, miniAppUrl: s
           await sendTelegramMessage(chatId, formatted, botToken);
         }
         if (update.message.from && db) {
-          logUserActivity(db, update.message.from.id, "agent_chat", { chat_id: chatId, intent: result.intent });
+          await logUserActivity(db, update.message.from.id, "agent_chat", {
+            chat_id: chatId,
+            intent: result.intent,
+            tier: result.oracle?.tier ?? null,
+            narrative: result.narrative
+          });
         }
       } catch (err: any) {
         console.error("Agent chain error:", err);

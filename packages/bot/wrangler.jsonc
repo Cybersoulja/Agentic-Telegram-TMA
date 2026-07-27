@@ -1,8 +1,8 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "telegram-mini-app-bot",
+  "name": "trillastrob",
   "main": "src/index.ts",
-  "compatibility_date": "2026-07-01",
+  "compatibility_date": "2025-07-18",
   "compatibility_flags": [
     "nodejs_compat"
   ],
@@ -13,18 +13,11 @@
     "NOVELAI_AGENT_PATH": "<path-to-novelai-lorebook-agent>",
     "MIRROR_LEECH_URL": "http://localhost:8095",
     "BLUESKY_PDS_URL": "http://localhost:2583"
-  },
-  "kv_namespaces": [
-    {
-      "binding": "TMA_KV",
-      "id": "tma-kv-dev"
-    }
-  ],
-  "d1_databases": [
-    {
-      "binding": "TMA_DB",
-      "database_name": "tma_db",
-      "database_id": "tma-db-dev"
-    }
-  ]
+  }
+  // No kv_namespaces/d1_databases bound here — TMA_KV/TMA_DB are optional env bindings (see
+  // Env in index.ts) and every D1/KV call already degrades gracefully when they're absent, so
+  // the Worker deploys and runs fine without them. Profile caching, activity logging, and
+  // /api/mission-log are inactive until a real KV namespace + D1 database are provisioned and
+  // this block is restored with their real IDs. This also means `wrangler dev --local` won't
+  // exercise those code paths locally anymore either — re-add the block locally if you need to.
 }
