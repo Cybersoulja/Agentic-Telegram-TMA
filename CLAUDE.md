@@ -63,7 +63,7 @@ Everything is a single Worker `fetch` handler in `index.ts` that manually dispat
 - `GET/POST /api/profile` — read/write a user profile, backed by D1 with a KV cache
 - `/api/integrations/*` — delegated to `handleIntegrationsRoute` in `integrations.ts`
 
-Env bindings (`Env` interface in `index.ts`, extends `IntegrationsEnv` and `AgentEnv`): `TELEGRAM_BOT_TOKEN`, `MINI_APP_URL`, `TMA_KV` (KVNamespace), `TMA_DB` (D1Database). Configured in `wrangler.jsonc`.
+Env bindings (`Env` interface in `index.ts`, extends `IntegrationsEnv` and `AgentEnv`): `TELEGRAM_BOT_TOKEN`, `MINI_APP_URL`, `TMA_KV` (KVNamespace), `TMA_DB` (D1Database). Configured in `wrangler.jsonc` — `kv_namespaces[].id` and `d1_databases[].database_id` point at real Cloudflare resources (not placeholders), so keep them in sync with the account's actual KV namespace/D1 database IDs. After first deploy (or if the D1 database is ever recreated), hit `GET /api/db/init` once to create the `users`/`activity_logs` tables.
 
 **initData verification** (`verifyTelegramInitData` in `index.ts`): reimplements Telegram's documented HMAC-SHA256 check using only the runtime Web Crypto API (`crypto.subtle`) — no external crypto dependency. Also rejects data older than `maxAgeSeconds` (default 24h). Do not replace this with a third-party library.
 

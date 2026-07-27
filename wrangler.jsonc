@@ -23,14 +23,14 @@
   "kv_namespaces": [
     {
       "binding": "TMA_KV",
-      "id": "tma-kv-dev"
+      "id": "3d0f0965850040bd8d86e8c61553c1fc"
     }
   ],
   "d1_databases": [
     {
       "binding": "TMA_DB",
       "database_name": "tma_db",
-      "database_id": "tma-db-dev"
+      "database_id": "a02c548f-0885-497f-b7c9-eb760fdf37b5"
     }
   ]
 }
