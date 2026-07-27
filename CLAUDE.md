@@ -33,6 +33,10 @@ npm run check-types --workspace=apps/frontend  # tsc -b
 
 There is no test suite in this repo currently.
 
+## Cloudflare Workers Builds (CI deploy)
+
+There are two `wrangler.jsonc` files: `packages/bot/wrangler.jsonc` is canonical and used by `npm run dev:bot` / `npm run deploy:bot` (npm sets cwd to `packages/bot`). The root-level `wrangler.jsonc` exists only because Cloudflare Workers Builds (the git-connected CI that runs `npm run build` then `npx wrangler versions upload`) executes from the repo root with no `--config` flag, so it needs its own entry-point (`main: "packages/bot/src/index.ts"`) and a copy of the same `vars`/`kv_namespaces`/`d1_databases`. Keep the two files in sync when bindings change. The root `build` npm script is a no-op (`wrangler deploy`/`versions upload` bundles the Worker itself).
+
 ## Git workflow
 
 Documentation-only changes (`CLAUDE.md`, `AGENTS.md`, `README.md`, code comments) should be committed and pushed directly to `main` — do not open a pull request for these. Open a pull request for source code changes, or when wrapping up an end-of-day batch of work.

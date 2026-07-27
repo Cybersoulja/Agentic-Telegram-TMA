@@ -1,0 +1,36 @@
+{
+  // Cloudflare Workers Builds (the CI that runs `npx wrangler versions upload`)
+  // checks out and runs commands from the repo root, not packages/bot. This
+  // root-level config exists solely so that CI's fixed `main` entry-point
+  // resolves; local dev/deploy still use packages/bot/wrangler.jsonc (via
+  // `npm run dev:bot` / `npm run deploy:bot`, whose cwd is packages/bot).
+  // Keep vars/bindings in sync with packages/bot/wrangler.jsonc.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "telegram-mini-app-bot",
+  "main": "packages/bot/src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "vars": {
+    "MINI_APP_URL": "https://telegram-mini-app-frontend.pages.dev",
+    "N8N_URL": "http://localhost:5678",
+    "QWEN_TTS_URL": "http://localhost:8080",
+    "NOVELAI_AGENT_PATH": "<path-to-novelai-lorebook-agent>",
+    "MIRROR_LEECH_URL": "http://localhost:8095",
+    "BLUESKY_PDS_URL": "http://localhost:2583"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "TMA_KV",
+      "id": "tma-kv-dev"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "TMA_DB",
+      "database_name": "tma_db",
+      "database_id": "tma-db-dev"
+    }
+  ]
+}
