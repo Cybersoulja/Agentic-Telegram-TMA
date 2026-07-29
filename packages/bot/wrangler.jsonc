@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "telegram-mini-app-bot",
+  "name": "trillastrob",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-01",
   "compatibility_flags": [
@@ -24,7 +24,7 @@
     {
       "binding": "TMA_DB",
       "database_name": "tma_db",
-      "database_id": "tma-db-dev"
+      "database_id": "a02c548f-0885-497f-b7c9-eb760fdf37b5"
     }
   ]
 }
