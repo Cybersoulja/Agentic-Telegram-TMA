@@ -462,4 +462,4 @@ AI Plaza becomes the interactive front door to the Space Age Hustle universe. It
 
 The architecture is designed so every future product — whether it's Relay 713, Trill Astro Academy, or even a fantasy setting built on the Magic Matrix — can plug into the same foundation. By keeping Canon, Narrative, Rules, and AI as separate layers, the universe can evolve for years without rewriting the core.
 
-This is the v1.0 Architecture Plan. From here, every feature, issue, and pull request should map back to one of these systems, giving the project a clear roadmap from prototype to full platform.
+This is the v0.1 Architecture Plan. From here, every feature, issue, and pull request should map back to one of these systems, giving the project a clear roadmap from prototype to full platform.
