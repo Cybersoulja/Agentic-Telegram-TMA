@@ -33,6 +33,10 @@ npm run check-types --workspace=apps/frontend  # tsc -b
 
 There is no test suite in this repo currently.
 
+## Cloudflare Workers Builds (CI deploy)
+
+There are two `wrangler.jsonc` files: `packages/bot/wrangler.jsonc` is canonical and used by `npm run dev:bot` / `npm run deploy:bot` (npm sets cwd to `packages/bot`). The root-level `wrangler.jsonc` exists only because Cloudflare Workers Builds (the git-connected CI that runs `npm run build` then `npx wrangler versions upload`) executes from the repo root with no `--config` flag, so it needs its own entry-point (`main: "packages/bot/src/index.ts"`) and a copy of the same `vars`/`kv_namespaces`/`d1_databases`. Keep the two files in sync when bindings change. The root `build` npm script is a no-op (`wrangler deploy`/`versions upload` bundles the Worker itself).
+
 ## Git workflow
 
 Documentation-only changes (`CLAUDE.md`, `AGENTS.md`, `README.md`, code comments) should be committed and pushed directly to `main` — do not open a pull request for these. Open a pull request for source code changes, or when wrapping up an end-of-day batch of work.
@@ -59,7 +63,7 @@ Everything is a single Worker `fetch` handler in `index.ts` that manually dispat
 - `GET/POST /api/profile` — read/write a user profile, backed by D1 with a KV cache
 - `/api/integrations/*` — delegated to `handleIntegrationsRoute` in `integrations.ts`
 
-Env bindings (`Env` interface in `index.ts`, extends `IntegrationsEnv` and `AgentEnv`): `TELEGRAM_BOT_TOKEN`, `MINI_APP_URL`, `TMA_KV` (KVNamespace), `TMA_DB` (D1Database). Configured in `wrangler.jsonc`.
+Env bindings (`Env` interface in `index.ts`, extends `IntegrationsEnv` and `AgentEnv`): `TELEGRAM_BOT_TOKEN`, `MINI_APP_URL`, `TMA_KV` (KVNamespace), `TMA_DB` (D1Database). Configured in `wrangler.jsonc` — `kv_namespaces[].id` and `d1_databases[].database_id` point at real Cloudflare resources (not placeholders), so keep them in sync with the account's actual KV namespace/D1 database IDs. After first deploy (or if the D1 database is ever recreated), hit `GET /api/db/init` once to create the `users`/`activity_logs` tables.
 
 **Deploying via Cloudflare Workers Builds**: the production Worker (script name `trillastrob`) auto-deploys from this repo through Cloudflare's git integration on every push, independent of this repo's own scripts. The Cloudflare project's **Root directory is set to `packages/bot`** — the build and deploy commands run from there, not the monorepo root. Two things to keep in sync when touching `packages/bot/wrangler.jsonc` or `packages/bot/package.json`:
 - `wrangler.jsonc`'s `kv_namespaces[].id` and `d1_databases[].database_id` must be real Cloudflare resource IDs, not local-dev placeholders — an invalid ID fails the deploy step (`wrangler` rejects unknown bindings), and the failure only shows up in the Cloudflare dashboard's build log, not in this repo's CI.

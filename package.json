@@ -7,6 +7,7 @@
     "apps/*"
   ],
   "scripts": {
+    "build": "echo 'No build step required at the repo root — wrangler deploy bundles packages/bot itself.'",
     "dev:bot": "npm run dev --workspace=packages/bot",
     "deploy:bot": "npm run deploy --workspace=packages/bot",
     "dev:frontend": "npm run dev --workspace=apps/frontend",
