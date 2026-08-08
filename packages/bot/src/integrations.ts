@@ -1,9 +1,13 @@
+import { verifyTelegramInitData } from "./telegramAuth.js";
+
 export interface IntegrationsEnv {
   N8N_URL?: string;
   QWEN_TTS_URL?: string;
   NOVELAI_AGENT_PATH?: string;
   MIRROR_LEECH_URL?: string;
   BLUESKY_PDS_URL?: string;
+  CRAFT_API_URL?: string;
+  TELEGRAM_BOT_TOKEN?: string;
 }
 
 export async function handleIntegrationsRoute(
@@ -21,12 +25,16 @@ export async function handleIntegrationsRoute(
     const novelaiPath = env.NOVELAI_AGENT_PATH || "<path-to-novelai-lorebook-agent>";
     const mirrorLeechUrl = env.MIRROR_LEECH_URL || "http://localhost:8095";
     const blueskyPdsUrl = env.BLUESKY_PDS_URL || "http://localhost:2583";
+    const craftUrl = env.CRAFT_API_URL?.replace(/\/$/, "");
 
-    const [n8nStatus, qwenStatus, mirrorLeechStatus, blueskyStatus] = await Promise.all([
+    const [n8nStatus, qwenStatus, mirrorLeechStatus, blueskyStatus, craftStatus] = await Promise.all([
       checkHealth(n8nUrl + "/healthz", "n8n Workflow Hub"),
       checkHealth(qwenUrl + "/docs", "Qwen3-TTS Studio"),
       checkHealth(mirrorLeechUrl + "/", "Mirror-Leech Bot"),
       checkHealth(blueskyPdsUrl + "/xrpc/_health", "Bluesky PDS"),
+      craftUrl
+        ? checkHealth(craftUrl + "/connection", "Craft")
+        : Promise.resolve({ online: false, message: "CRAFT_API_URL is not configured" }),
     ]);
 
     return new Response(
@@ -67,6 +75,14 @@ export async function handleIntegrationsRoute(
             url: blueskyPdsUrl,
             message: blueskyStatus.message,
             description: "Self-hosted AT Protocol Personal Data Server"
+          },
+          craft: {
+            name: "Craft Quick Capture",
+            // CRAFT_API_URL is a bearer credential embedded in the URL itself — never echo it back.
+            status: craftStatus.online ? "online" : "offline",
+            configured: Boolean(craftUrl),
+            message: craftStatus.message,
+            description: "Capture quick notes and tasks straight into your Craft space"
           }
         }
       }),
@@ -263,6 +279,75 @@ export async function handleIntegrationsRoute(
           }),
           { status: 200, headers: corsHeaders }
         );
+      }
+
+      if (service === "craft") {
+        const craftUrl = env.CRAFT_API_URL?.replace(/\/$/, "");
+        if (!craftUrl) {
+          return new Response(
+            JSON.stringify({ success: false, service: "Craft", error: "CRAFT_API_URL is not configured." }),
+            { status: 502, headers: corsHeaders }
+          );
+        }
+
+        // CRAFT_API_URL is a bearer credential to a real personal space — require a valid
+        // Telegram initData on every write so only genuine app launches can trigger one.
+        if (!env.TELEGRAM_BOT_TOKEN) {
+          return new Response(
+            JSON.stringify({ success: false, service: "Craft", error: "Server is not configured for Telegram auth." }),
+            { status: 500, headers: corsHeaders }
+          );
+        }
+        const initDataAuth = await verifyTelegramInitData(body.initData || "", env.TELEGRAM_BOT_TOKEN);
+        if (!initDataAuth.isValid) {
+          return new Response(
+            JSON.stringify({ success: false, service: "Craft", error: initDataAuth.error || "Unauthorized" }),
+            { status: 403, headers: corsHeaders }
+          );
+        }
+
+        const text = payload?.text;
+        if (!text) {
+          return new Response(
+            JSON.stringify({ success: false, service: "Craft", error: "payload.text is required." }),
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
+        const isTask = action === "add_task";
+        const targetUrl = `${craftUrl}${isTask ? "/tasks" : "/blocks"}`;
+        const requestBody = isTask
+          ? { tasks: [{ markdown: text, location: { type: "inbox" } }] }
+          : { markdown: text, position: { position: "end", date: "today" } };
+
+        try {
+          const resp = await fetch(targetUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody)
+          });
+          const responseText = await resp.text();
+          let data: any;
+          try {
+            data = JSON.parse(responseText);
+          } catch {
+            data = { rawResponse: responseText };
+          }
+          return new Response(
+            JSON.stringify({
+              success: resp.ok,
+              service: "Craft",
+              action: isTask ? "add_task" : "quick_note",
+              result: data
+            }),
+            { status: resp.ok ? 200 : 502, headers: corsHeaders }
+          );
+        } catch (err: any) {
+          return new Response(
+            JSON.stringify({ success: false, service: "Craft", error: `Could not reach Craft API: ${err.message}` }),
+            { status: 502, headers: corsHeaders }
+          );
+        }
       }
 
       return new Response(
