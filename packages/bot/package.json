@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "build": "echo 'No separate build step required — wrangler deploy bundles the Worker.'"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241218.0",
