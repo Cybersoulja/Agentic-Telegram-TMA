@@ -7,10 +7,12 @@
     "apps/*"
   ],
   "scripts": {
+    "build": "echo 'No build step required at the repo root — wrangler deploy bundles packages/bot itself.'",
     "dev:bot": "npm run dev --workspace=packages/bot",
     "deploy:bot": "npm run deploy --workspace=packages/bot",
     "dev:frontend": "npm run dev --workspace=apps/frontend",
     "build:frontend": "npm run build --workspace=apps/frontend",
+    "build": "echo 'No separate build step required — wrangler deploy bundles the Worker.'",
     "check-types": "npm run check-types --workspaces --if-present"
   },
   "devDependencies": {

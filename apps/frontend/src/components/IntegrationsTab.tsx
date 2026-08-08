@@ -9,6 +9,8 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl, in
   const [services, setServices] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [triggerStatus, setTriggerStatus] = useState<Record<string, string>>({});
+  const [mirrorLeechLink, setMirrorLeechLink] = useState<string>("");
+  const [blueskyPostText, setBlueskyPostText] = useState<string>("");
   const [craftText, setCraftText] = useState<string>("");
 
   useEffect(() => {
@@ -124,6 +126,85 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl, in
               </button>
             </div>
             {triggerStatus["qwen_tts"] && <pre className="int-log">{triggerStatus["qwen_tts"]}</pre>}
+          </section>
+
+          {/* Mirror-Leech Bot */}
+          <section className="card integration-item">
+            <div className="int-header">
+              <span className={`int-badge ${services.mirror_leech?.status === "online" ? "online" : "offline"}`}>
+                {services.mirror_leech?.status?.toUpperCase() || "OFFLINE"}
+              </span>
+              <h3>📥 Mirror-Leech Bot</h3>
+            </div>
+            <p className="description">{services.mirror_leech?.description || "Remote-download & torrent/leech relay (aria2c/qBittorrent/yt-dlp)"}</p>
+            <div className="url-form mt-2">
+              <input
+                className="select-input"
+                type="text"
+                placeholder="Paste a magnet/URL to mirror or leech"
+                value={mirrorLeechLink}
+                onChange={(e) => setMirrorLeechLink(e.target.value)}
+              />
+            </div>
+            <div className="int-actions mt-2">
+              <button
+                className="btn btn-primary btn-sm"
+                disabled={!mirrorLeechLink}
+                onClick={() => handleTrigger("mirror_leech", "mirror", { url: mirrorLeechLink })}
+              >
+                ☁️ Mirror to Drive
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={!mirrorLeechLink}
+                onClick={() => handleTrigger("mirror_leech", "leech", { url: mirrorLeechLink })}
+              >
+                📤 Leech to Telegram
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => handleTrigger("mirror_leech", "status")}
+              >
+                📋 Check Queue
+              </button>
+            </div>
+            {triggerStatus["mirror_leech"] && <pre className="int-log">{triggerStatus["mirror_leech"]}</pre>}
+          </section>
+
+          {/* Bluesky PDS */}
+          <section className="card integration-item">
+            <div className="int-header">
+              <span className={`int-badge ${services.bluesky_pds?.status === "online" ? "online" : "offline"}`}>
+                {services.bluesky_pds?.status?.toUpperCase() || "OFFLINE"}
+              </span>
+              <h3>🦋 Bluesky PDS</h3>
+            </div>
+            <p className="description">{services.bluesky_pds?.description || "Self-hosted AT Protocol Personal Data Server"}</p>
+            <div className="url-form mt-2">
+              <input
+                className="select-input"
+                type="text"
+                placeholder="What's happening?"
+                value={blueskyPostText}
+                onChange={(e) => setBlueskyPostText(e.target.value)}
+              />
+            </div>
+            <div className="int-actions mt-2">
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => handleTrigger("bluesky_pds", "describe")}
+              >
+                🔍 Describe Server
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                disabled={!blueskyPostText}
+                onClick={() => handleTrigger("bluesky_pds", "post", { text: blueskyPostText })}
+              >
+                🦋 Post
+              </button>
+            </div>
+            {triggerStatus["bluesky_pds"] && <pre className="int-log">{triggerStatus["bluesky_pds"]}</pre>}
           </section>
 
           {/* Craft Quick Capture */}
