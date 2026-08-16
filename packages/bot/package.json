@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "build": "tsc --noEmit",
     "deploy": "wrangler deploy",
     "check-types": "tsc --noEmit",
     "build": "echo 'No separate build step required — wrangler deploy bundles the Worker.'"
