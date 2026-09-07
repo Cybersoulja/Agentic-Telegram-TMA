@@ -35,7 +35,7 @@ interface InventoryState {
   };
 
   // Consuming
-  useItem: (itemId: string) => { success: boolean; message: string };
+  consumeItem: (itemId: string) => { success: boolean; message: string };
 }
 
 export const useInventory = create<InventoryState>()(
@@ -158,7 +158,7 @@ export const useInventory = create<InventoryState>()(
     },
 
     // Consuming
-    useItem: (itemId: string) => {
+    consumeItem: (itemId: string) => {
       const { items, removeItem } = get();
       const item = items.find((i) => i.id === itemId);
 
