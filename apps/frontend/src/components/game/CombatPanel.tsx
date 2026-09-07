@@ -232,11 +232,11 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({ onCombatEnd, enemies: 
       {/* Combat Header */}
       <Card className="bg-destructive/20 border-destructive/40">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-red-200">
+          <CardTitle className="flex items-center gap-2 text-destructive">
             <Sword className="h-5 w-5" />
             Combat Encounter
             {isPlayerTurn && (
-              <Badge variant="secondary" className="ml-auto bg-primary text-blue-100">
+              <Badge variant="secondary" className="ml-auto bg-primary text-primary-foreground">
                 <Timer className="h-3 w-3 mr-1" />
                 {turnTimer}s
               </Badge>
@@ -329,7 +329,7 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({ onCombatEnd, enemies: 
               <div key={enemy.id} className="bg-muted rounded p-3">
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-semibold text-foreground">{enemy.name}</span>
-                  <Badge variant="secondary" className="bg-destructive text-red-100">
+                  <Badge variant="secondary" className="bg-destructive text-destructive-foreground">
                     Lv. {enemy.level}
                   </Badge>
                 </div>
@@ -350,7 +350,7 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({ onCombatEnd, enemies: 
                 <div className="grid grid-cols-2 gap-2 text-xs mt-2">
                   <div>
                     <span className="text-muted-foreground">Damage: </span>
-                    <span className="text-orange-400">{enemy.damage}</span>
+                    <span className="text-warning">{enemy.damage}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Armor: </span>
@@ -400,7 +400,7 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({ onCombatEnd, enemies: 
       {/* Processing Indicator */}
       {isProcessing && (
         <Alert className="bg-primary/20 border-primary/40">
-          <AlertDescription className="text-blue-200">
+          <AlertDescription className="text-primary">
             Processing action...
           </AlertDescription>
         </Alert>
@@ -409,7 +409,7 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({ onCombatEnd, enemies: 
       {/* Enemy Turn Indicator */}
       {!isPlayerTurn && (
         <Alert className="bg-destructive/20 border-destructive/40">
-          <AlertDescription className="text-red-200">
+          <AlertDescription className="text-destructive">
             Enemy turn - prepare for incoming attacks!
           </AlertDescription>
         </Alert>

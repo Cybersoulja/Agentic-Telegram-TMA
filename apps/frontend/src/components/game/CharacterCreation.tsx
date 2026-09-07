@@ -268,7 +268,7 @@ export const CharacterCreation: React.FC<CharacterCreationProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={generateRandomName}
-                      className="text-primary hover:text-blue-300"
+                      className="text-primary hover:text-primary/80"
                     >
                       🎲 Random Name
                     </Button>
@@ -280,7 +280,7 @@ export const CharacterCreation: React.FC<CharacterCreationProps> = ({
 
                 {nameError && (
                   <Alert className="bg-destructive/20 border-destructive/40">
-                    <AlertDescription className="text-red-200">
+                    <AlertDescription className="text-destructive">
                       {nameError}
                     </AlertDescription>
                   </Alert>
@@ -324,7 +324,7 @@ export const CharacterCreation: React.FC<CharacterCreationProps> = ({
                   <h3 className="text-2xl font-bold text-foreground">{characterName}</h3>
                   <Badge 
                     variant="secondary" 
-                    className="mt-2 bg-primary text-blue-100"
+                    className="mt-2 bg-primary text-primary-foreground"
                   >
                     {CHARACTER_CLASSES[selectedClass].name}
                   </Badge>
@@ -358,7 +358,7 @@ export const CharacterCreation: React.FC<CharacterCreationProps> = ({
 
                 <Alert className="bg-primary/20 border-primary/40">
                   <User className="h-4 w-4" />
-                  <AlertDescription className="text-blue-200">
+                  <AlertDescription className="text-primary">
                     Your character will be saved automatically. You can continue your adventure anytime!
                   </AlertDescription>
                 </Alert>

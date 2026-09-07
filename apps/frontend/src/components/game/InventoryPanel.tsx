@@ -58,13 +58,13 @@ export const InventoryPanel: React.FC = () => {
       case 'common':
         return 'bg-muted text-muted-foreground';
       case 'uncommon':
-        return 'bg-success text-green-100';
+        return 'bg-success text-foreground';
       case 'rare':
-        return 'bg-primary text-blue-100';
+        return 'bg-primary text-primary-foreground';
       case 'epic':
-        return 'bg-accent text-purple-100';
+        return 'bg-accent text-accent-foreground';
       case 'legendary':
-        return 'bg-warning text-yellow-100';
+        return 'bg-warning text-foreground';
       default:
         return 'bg-muted text-muted-foreground';
     }

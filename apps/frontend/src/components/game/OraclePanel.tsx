@@ -9,7 +9,7 @@ import type { OracleResult } from '../../lib/oracleEngine';
 
 const TIER_COLORS: Record<number, string> = {
   0: 'text-destructive',
-  1: 'text-orange-400',
+  1: 'text-warning',
   2: 'text-warning',
   3: 'text-success',
   4: 'text-primary',
@@ -18,9 +18,9 @@ const TIER_COLORS: Record<number, string> = {
 
 const TIER_BG: Record<number, string> = {
   0: 'bg-destructive/10 border-destructive/40',
-  1: 'bg-orange-950/40 border-orange-800',
+  1: 'bg-warning/10 border-warning/40',
   2: 'bg-warning/10 border-warning/40',
-  3: 'bg-success/10/40 border-green-800',
+  3: 'bg-success/10 border-success/40',
   4: 'bg-primary/10 border-primary/40',
   5: 'bg-accent/10 border-accent/40',
 };
@@ -143,7 +143,7 @@ export const OraclePanel: React.FC = () => {
           <div className="flex items-center gap-3 mb-1">
             <span className="text-2xl">🎲</span>
             <div>
-              <h2 className="text-lg font-bold text-purple-300">Story Decision Oracle</h2>
+              <h2 className="text-lg font-bold text-accent">Story Decision Oracle</h2>
               <p className="text-muted-foreground text-xs">
                 Describe a situation. The Oracle rolls five dice and reveals your fate.
               </p>
@@ -182,9 +182,9 @@ export const OraclePanel: React.FC = () => {
 
       {/* Rolling animation */}
       {isRolling && (
-        <Card className="bg-card border-purple-700">
+        <Card className="bg-card border-accent">
           <CardContent className="p-4">
-            <p className="text-purple-300 text-sm mb-3 text-center font-medium">
+            <p className="text-accent text-sm mb-3 text-center font-medium">
               The Oracle considers your fate…
             </p>
             <div className="flex gap-2 justify-center">

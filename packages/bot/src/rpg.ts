@@ -88,6 +88,12 @@ export async function handleRpgRoute(
     const auth = await authenticate(url.searchParams.get("initData"), env, corsHeaders);
     if (!auth.ok) return auth.response;
     const characterId = parseInt(segments[1], 10);
+    if (!Number.isInteger(characterId) || characterId < 1) {
+      return new Response(JSON.stringify({ success: false, error: "Invalid character id" }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
     const character = await getCharacterById(env.TMA_DB, auth.userId, characterId);
     if (!character) {
       return new Response(JSON.stringify({ success: false, error: "Character not found" }), {
@@ -102,7 +108,14 @@ export async function handleRpgRoute(
     const body: any = await request.json().catch(() => ({}));
     const auth = await authenticate(body.initData, env, corsHeaders);
     if (!auth.ok) return auth.response;
-    const result = await saveGameState(env.TMA_DB, auth.userId, body.slot || 1, body.gameState);
+    const slot = body.slot === undefined ? 1 : Number(body.slot);
+    if (!Number.isInteger(slot) || slot < 1) {
+      return new Response(JSON.stringify({ success: false, error: "Invalid slot" }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+    const result = await saveGameState(env.TMA_DB, auth.userId, slot, body.gameState);
     return new Response(JSON.stringify(result), { status: result.success ? 200 : 500, headers: corsHeaders });
   }
 
@@ -110,6 +123,12 @@ export async function handleRpgRoute(
     const auth = await authenticate(url.searchParams.get("initData"), env, corsHeaders);
     if (!auth.ok) return auth.response;
     const slot = parseInt(segments[1], 10);
+    if (!Number.isInteger(slot) || slot < 1) {
+      return new Response(JSON.stringify({ success: false, error: "Invalid slot" }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
     const save = await getGameSave(env.TMA_DB, auth.userId, slot);
     if (!save) {
       return new Response(JSON.stringify({ success: false, error: "Save not found" }), {

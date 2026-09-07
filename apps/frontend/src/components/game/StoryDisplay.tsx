@@ -43,9 +43,19 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
     }
   }, [currentText, dmResponse]);
 
-  const formatText = (text: string) => {
-    // Simple text formatting for better readability
+  const escapeHtml = (text: string) => {
     return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+
+  const formatText = (text: string) => {
+    // Escape HTML first so AI/user-provided text can't inject markup,
+    // then apply simple markdown-lite formatting on the escaped string.
+    return escapeHtml(text)
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
       .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic text
       .replace(/\n/g, '<br />'); // Line breaks
