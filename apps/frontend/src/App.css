@@ -19,6 +19,7 @@
   --success-color: #10b981;
   --error-color: #ef4444;
   --warning-color: #f59e0b;
+  --radius: 0.75rem;
 
   background-color: var(--bg-color);
   color: var(--text-color);
