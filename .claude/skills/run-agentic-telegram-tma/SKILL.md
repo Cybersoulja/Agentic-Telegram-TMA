@@ -97,7 +97,7 @@ npm run dev:bot        # wrangler dev on :8787, separate terminal
 npm run dev:frontend   # vite on :5173, separate terminal
 ```
 
-Open `http://localhost:5173` in a real browser. Useless headless — no window will appear in this container.
+Open `http://localhost:5173` in a real, visible browser on your own machine. This only makes sense outside this container — there's no display here for a window to appear on, so use the agent path above instead when working in this sandbox.
 
 ## Gotchas
 
@@ -112,7 +112,7 @@ Open `http://localhost:5173` in a real browser. Useless headless — no window w
 - **POST `/api/profile` expects `id`, not `userId`,** in the JSON body (GET uses `?userId=`). Passing `userId` in the POST body silently fails with `"User profile ID is required."`
 - **D1/KV are simulated locally** by Miniflare — you do not need real Cloudflare credentials or the actual `kv_namespaces`/`d1_databases` IDs in `wrangler.jsonc` to point at live resources for local dev; `wrangler dev` creates a local SQLite-backed simulation automatically.
 - **Frontend defaults to `http://localhost:8787`** for the backend (`VITE_API_URL` env var, else that hardcoded default in `App.tsx`) — matches the backend port used above, no extra config needed for local dev.
-- **`wrangler@3.114` is out of date** (repo pins `^3.100.0`); it emits an upgrade nag and falls back the requested `compatibility_date` from `2026-07-01` to the runtime's max supported `2025-07-18`. Cosmetic — doesn't affect any of the above.
+- **`wrangler` (v3.114, satisfying the repo's `^3.100.0` pin) prints an upgrade-available nag** and falls back the requested `compatibility_date` from `2026-07-01` to the runtime's max supported `2025-07-18`. Cosmetic — doesn't affect any of the above.
 
 ## Troubleshooting
 

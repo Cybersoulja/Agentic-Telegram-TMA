@@ -7,7 +7,8 @@
 //
 // Commands:
 //   open <url> <screenshot.png>              navigate, wait for load, screenshot
-//   click-tab <url> <tabId> <screenshot.png> click a TabBar tab (dashboard|storage|integrations|settings), screenshot
+//   click-tab <url> <tabId> <screenshot.png> click a TabBar tab by id (dashboard|storage|integrations|settings —
+//                                             mapped internally to its real rendered label), screenshot
 //   click-text <url> <text> <screenshot.png> click first element containing <text>, screenshot
 //   eval <url> <jsExpression>                run a JS expression in page context, print JSON result
 //
@@ -20,6 +21,16 @@ import { chromium } from "playwright";
 const EXECUTABLE_PATH =
   process.env.PLAYWRIGHT_CHROMIUM_PATH || "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 
+// TabBar.tsx renders no `data-tab-id` — only an icon + visible label per button.
+// Map each TabId to its actual rendered label so click-tab can target real DOM text
+// instead of the (non-existent) id string. Keep in sync with apps/frontend/src/components/TabBar.tsx.
+const TAB_LABELS = {
+  dashboard: "Dashboard",
+  storage: "Cloud & Bio",
+  integrations: "Oneseco Hub",
+  settings: "Settings",
+};
+
 async function withPage(url, fn) {
   const browser = await chromium.launch({
     executablePath: EXECUTABLE_PATH,
@@ -30,7 +41,10 @@ async function withPage(url, fn) {
     const logs = [];
     page.on("console", (msg) => logs.push(`[console.${msg.type()}] ${msg.text()}`));
     page.on("pageerror", (err) => logs.push(`[pageerror] ${err.message}`));
-    await page.goto(url, { waitUntil: "networkidle" });
+    // domcontentloaded, not networkidle: Vite's dev server keeps a persistent HMR
+    // websocket open, which can make networkidle hang or flake on a dev server.
+    // The explicit .tab-bar wait below is what actually gates on the app having rendered.
+    await page.goto(url, { waitUntil: "domcontentloaded" });
     // #root is present in the static HTML before React even loads, so waiting on it alone
     // would report success on a blank page if the bundle fails to compile/import/render.
     // .tab-bar only exists once App.tsx has actually mounted and rendered.
@@ -56,11 +70,15 @@ async function main() {
 
   if (cmd === "click-tab") {
     const [url, tabId, out] = args;
+    const label = TAB_LABELS[tabId];
+    if (!label) {
+      console.error(`Unknown tabId "${tabId}". Valid values: ${Object.keys(TAB_LABELS).join(", ")}`);
+      process.exit(1);
+    }
     const { logs } = await withPage(url, async (page) => {
-      await page.click(`[data-tab-id="${tabId}"], button:has-text("${tabId}")`, { timeout: 5000 }).catch(async () => {
-        // Fallback: TabBar renders buttons with visible labels, not data-tab-id.
-        await page.click(`text=${tabId}`, { timeout: 5000 });
-      });
+      // Role-based locator, not a hand-built selector string: avoids quoting/escaping
+      // pitfalls and matches only real <button> elements (accessible-name substring match).
+      await page.getByRole("button", { name: label }).click({ timeout: 5000 });
       await page.waitForTimeout(300);
       await page.screenshot({ path: out });
     });
@@ -71,7 +89,7 @@ async function main() {
   if (cmd === "click-text") {
     const [url, text, out] = args;
     const { logs } = await withPage(url, async (page) => {
-      await page.click(`text=${text}`, { timeout: 5000 });
+      await page.getByText(text, { exact: false }).first().click({ timeout: 5000 });
       await page.waitForTimeout(500);
       await page.screenshot({ path: out });
     });
