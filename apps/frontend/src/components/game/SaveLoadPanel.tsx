@@ -16,8 +16,8 @@ import type { GameState } from '../../types/game';
  */
 export const SaveLoadPanel: React.FC = () => {
   const { character, gameEngine, updateCharacter } = useCharacter();
-  const { items, initializeInventory } = useInventory();
-  const { saveProgress, loadProgress, resetStory } = useStoryEngine();
+  const { items, setInventory } = useInventory();
+  const { getStoryState, restoreStoryState, resetStory } = useStoryEngine();
   const [saves, setSaves] = useState<Array<{ name: string; data: GameState; timestamp: Date }>>([]);
   const [saveName, setSaveName] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
@@ -49,13 +49,15 @@ export const SaveLoadPanel: React.FC = () => {
     }
   };
 
-  const saveGame = () => {
+  const saveGame = (name?: string) => {
+    const nameToSave = (name ?? saveName).trim();
+
     if (!character) {
       setMessage({ type: 'error', text: 'No character to save.' });
       return;
     }
 
-    if (!saveName.trim()) {
+    if (!nameToSave) {
       setMessage({ type: 'error', text: 'Please enter a save name.' });
       return;
     }
@@ -64,7 +66,7 @@ export const SaveLoadPanel: React.FC = () => {
       const gameState: GameState = {
         character,
         inventory: items,
-        storyState: null,
+        storyState: getStoryState() as unknown as GameState['storyState'],
         currentLocation: 'unknown',
         gameFlags: {},
         combatState: null,
@@ -76,14 +78,14 @@ export const SaveLoadPanel: React.FC = () => {
       };
 
       const saveData = {
-        name: saveName.trim(),
+        name: nameToSave,
         data: gameState,
         timestamp: new Date()
       };
 
-      const existingIndex = saves.findIndex(save => save.name === saveName.trim());
+      const existingIndex = saves.findIndex(save => save.name === nameToSave);
       let updatedSaves;
-      
+
       if (existingIndex !== -1) {
         updatedSaves = [...saves];
         updatedSaves[existingIndex] = saveData;
@@ -98,7 +100,6 @@ export const SaveLoadPanel: React.FC = () => {
 
       localStorage.setItem('rpg_saved_games', JSON.stringify(updatedSaves));
       setSaves(updatedSaves);
-      saveProgress(); // Save story progress
       setSaveName('');
       setMessage({ type: 'success', text: `Game saved as "${saveData.name}".` });
     } catch (error) {
@@ -110,17 +111,11 @@ export const SaveLoadPanel: React.FC = () => {
   const loadGame = (saveData: { name: string; data: GameState; timestamp: Date }) => {
     try {
       const { data } = saveData;
-      
+
       if (data.character) {
         updateCharacter(data.character);
-        initializeInventory(data.character.class);
-        
-        // Add inventory items
-        data.inventory.forEach((_item: unknown) => {
-          // Would need to add items to inventory store
-        });
-        
-        loadProgress(); // Load story progress
+        setInventory(data.inventory ?? []);
+        restoreStoryState(data.storyState as unknown as { currentNodeId: string; variables: Record<string, any> } | null);
         setMessage({ type: 'success', text: `Game "${saveData.name}" loaded successfully.` });
       } else {
         setMessage({ type: 'error', text: 'Invalid save data.' });
@@ -162,8 +157,9 @@ export const SaveLoadPanel: React.FC = () => {
 
   const quickSave = () => {
     const timestamp = new Date().toLocaleString();
-    setSaveName(`Quick Save - ${timestamp}`);
-    setTimeout(() => saveGame(), 100);
+    const name = `Quick Save - ${timestamp}`;
+    setSaveName(name);
+    saveGame(name);
   };
 
   return (
@@ -198,8 +194,8 @@ export const SaveLoadPanel: React.FC = () => {
               onKeyPress={(e) => e.key === 'Enter' && saveGame()}
               className="bg-muted border-border text-foreground"
             />
-            <Button 
-              onClick={saveGame}
+            <Button
+              onClick={() => saveGame()}
               disabled={!character || !saveName.trim()}
               className="bg-success hover:bg-success/90"
             >

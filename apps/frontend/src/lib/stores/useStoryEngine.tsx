@@ -23,6 +23,8 @@ interface StoryState {
   getVariable: (name: string) => any;
   saveProgress: () => void;
   loadProgress: () => void;
+  getStoryState: () => { currentNodeId: string; variables: Record<string, any> };
+  restoreStoryState: (state: { currentNodeId: string; variables: Record<string, any> } | null | undefined) => void;
 }
 
 export const useStoryEngine = create<StoryState>()(
@@ -155,6 +157,27 @@ export const useStoryEngine = create<StoryState>()(
       });
       
       console.log('Story progress loaded');
+    },
+
+    getStoryState: () => {
+      const { storyEngine } = get();
+      return storyEngine.getState();
+    },
+
+    restoreStoryState: (state) => {
+      const { storyEngine } = get();
+      storyEngine.restoreState(state);
+
+      const text = storyEngine.getCurrentText();
+      const choices = storyEngine.getCurrentChoices();
+
+      set({
+        currentText: text,
+        currentChoices: choices,
+        storyHistory: [text]
+      });
+
+      console.log('Story state restored from save');
     }
   }))
 );

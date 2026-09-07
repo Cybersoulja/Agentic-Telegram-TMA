@@ -137,6 +137,11 @@ export interface RpgLeaderboardRow extends RpgLeaderboardEntry {
   created_at: string;
 }
 
+// Public leaderboard row: deliberately omits telegram_user_id, since GET /api/rpg/leaderboard
+// is the one RPG route that doesn't require initData auth (matching AetherRPG's original) and
+// is reachable by anyone who can reach this public Worker.
+export type RpgLeaderboardPublicRow = Omit<RpgLeaderboardRow, "telegram_user_id">;
+
 const LEADERBOARD_ORDER_COLUMNS = {
   level: "level",
   playtime: "playtime",
@@ -147,14 +152,17 @@ export async function getLeaderboard(
   db: D1Database | undefined,
   type: keyof typeof LEADERBOARD_ORDER_COLUMNS,
   limit: number
-): Promise<RpgLeaderboardRow[]> {
+): Promise<RpgLeaderboardPublicRow[]> {
   if (!db) return [];
   const column = LEADERBOARD_ORDER_COLUMNS[type] ?? LEADERBOARD_ORDER_COLUMNS.achievements;
   try {
     const { results } = await db
-      .prepare(`SELECT * FROM rpg_leaderboard ORDER BY ${column} DESC LIMIT ?`)
+      .prepare(
+        `SELECT id, character_name, character_class, level, playtime, achievements_unlocked, created_at
+         FROM rpg_leaderboard ORDER BY ${column} DESC LIMIT ?`
+      )
       .bind(limit)
-      .all<RpgLeaderboardRow>();
+      .all<RpgLeaderboardPublicRow>();
     return results ?? [];
   } catch (err) {
     console.warn("getLeaderboard error:", err);

@@ -13,6 +13,7 @@ interface InventoryState {
 
   // Actions
   initializeInventory: (characterClass: CharacterClass) => void;
+  setInventory: (items: Item[]) => void;
   addItem: (item: Item) => void;
   removeItem: (itemId: string, quantity?: number) => void;
   getItemById: (itemId: string) => Item | undefined;
@@ -48,6 +49,11 @@ export const useInventory = create<InventoryState>()(
       const startingItems = gameEngine.getStartingItems(characterClass);
       set({ items: startingItems });
       console.log('Inventory initialized with starting items:', startingItems);
+    },
+
+    setInventory: (items: Item[]) => {
+      set({ items });
+      console.log('Inventory replaced from save data:', items);
     },
 
     addItem: (item: Item) => {

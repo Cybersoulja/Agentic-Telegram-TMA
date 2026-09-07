@@ -691,6 +691,26 @@ THE END — True Ending: The World Restored`,
     localStorage.removeItem(this.saveKey);
   }
 
+  /**
+   * Returns a plain-object snapshot of the engine's position and variables, for embedding
+   * in a named save (see SaveLoadPanel.tsx) rather than the single global localStorage slot.
+   */
+  getState(): { currentNodeId: string; variables: Record<string, any> } {
+    return { currentNodeId: this.currentNodeId, variables: { ...this.variables } };
+  }
+
+  /**
+   * Restores a snapshot previously returned by getState(), used when loading a named save so
+   * each save slot can carry independent story progress.
+   */
+  restoreState(state: { currentNodeId: string; variables: Record<string, any> } | null | undefined): void {
+    if (!state) return;
+    this.currentNodeId = state.currentNodeId && this.storyData.nodes[state.currentNodeId]
+      ? state.currentNodeId
+      : this.storyData.startNode;
+    this.variables = { ...this.storyData.variables, ...state.variables };
+  }
+
   getCurrentPath(): string {
     return this.currentNodeId;
   }
