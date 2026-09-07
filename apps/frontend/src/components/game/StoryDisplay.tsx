@@ -75,7 +75,7 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
                 <Crown className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
                 <div>
                   <div className="text-accent font-semibold text-sm mb-1">
-                    Taskade Dungeon Master
+                    AI Dungeon Master
                   </div>
                   <div 
                     className="text-foreground text-sm leading-relaxed"
@@ -92,7 +92,7 @@ export const StoryDisplay: React.FC<StoryDisplayProps> = ({
               <div className="flex items-center gap-2">
                 <Crown className="h-5 w-5 text-accent" />
                 <div className="text-accent font-semibold text-sm">
-                  Taskade Dungeon Master
+                  AI Dungeon Master
                 </div>
                 <Loader2 className="h-4 w-4 animate-spin text-accent" />
               </div>

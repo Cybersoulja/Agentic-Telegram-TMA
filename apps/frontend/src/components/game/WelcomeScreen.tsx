@@ -68,12 +68,12 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     {
       icon: <BookOpen className="h-6 w-6" />,
       title: "Interactive Fiction",
-      description: "Experience a rich, branching narrative powered by Ink.js storytelling engine"
+      description: "Experience a rich, branching narrative that reacts to your choices"
     },
     {
       icon: <Crown className="h-6 w-6" />,
       title: "AI Dungeon Master",
-      description: "Dynamic responses from Taskade AI agents acting as your personal DM"
+      description: "Dynamic, Gemini-powered responses from your personal AI Dungeon Master"
     },
     {
       icon: <Users className="h-6 w-6" />,
@@ -107,7 +107,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             An Interactive Text-Based RPG Adventure
           </p>
           <Badge variant="secondary" className="bg-accent text-purple-100">
-            Powered by Ink.js & Taskade AI
+            Powered by Gemini AI
           </Badge>
         </div>
 
@@ -225,7 +225,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
           {/* Credits */}
           <div className="text-center mt-8 text-sm text-muted-foreground">
-            <p>Built with React, Ink.js, and Taskade AI Agents</p>
+            <p>Built with React and Gemini AI</p>
             <p className="mt-1">© 2024 Aethermoor Chronicles - An Interactive Fiction Experience</p>
           </div>
         </div>
