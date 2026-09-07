@@ -12,7 +12,8 @@
 //   eval <url> <jsExpression>                run a JS expression in page context, print JSON result
 //
 // All commands launch headless Chromium from the pre-installed browser path,
-// load <url>, wait for `#root` to render, run the action, then close.
+// load <url>, wait for the app shell (`.tab-bar`) to actually render, run the
+// action, then close.
 
 import { chromium } from "playwright";
 
@@ -30,7 +31,10 @@ async function withPage(url, fn) {
     page.on("console", (msg) => logs.push(`[console.${msg.type()}] ${msg.text()}`));
     page.on("pageerror", (err) => logs.push(`[pageerror] ${err.message}`));
     await page.goto(url, { waitUntil: "networkidle" });
-    await page.waitForSelector("#root", { timeout: 10000 });
+    // #root is present in the static HTML before React even loads, so waiting on it alone
+    // would report success on a blank page if the bundle fails to compile/import/render.
+    // .tab-bar only exists once App.tsx has actually mounted and rendered.
+    await page.waitForSelector(".tab-bar", { timeout: 10000 });
     const result = await fn(page);
     return { result, logs };
   } finally {

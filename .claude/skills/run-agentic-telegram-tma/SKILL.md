@@ -18,7 +18,10 @@ All paths below are relative to the repo root (`<unit>/`), which is where this s
 
 ```bash
 npm install   # from repo root — installs both workspaces
+(cd .claude/skills/run-agentic-telegram-tma && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install)   # driver's isolated deps — NOT covered by the root install
 ```
+
+The skill's own `node_modules` (Playwright) is deliberately excluded from the root npm workspaces and is gitignored, so a fresh checkout needs that second install too — see Gotchas.
 
 ### 2. Backend: `wrangler dev`
 
@@ -75,9 +78,16 @@ npm run lint --workspace=apps/frontend
 
 ### 5. Shut down
 
+Don't use a bare `pkill -f "wrangler dev"` / `pkill -f "vite"` — on a shared machine that matches (and kills) unrelated processes with the same command line. Scope by working directory instead:
+
 ```bash
-pkill -f "wrangler dev"
-pkill -f "vite --port 5173"
+ROOT="$(git rev-parse --show-toplevel)"
+for pid in $(pgrep -f "wrangler dev"); do
+  [ "$(readlink "/proc/$pid/cwd")" = "$ROOT/packages/bot" ] && kill "$pid"
+done
+for pid in $(pgrep -f "vite --port 5173"); do
+  [ "$(readlink "/proc/$pid/cwd")" = "$ROOT/apps/frontend" ] && kill "$pid"
+done
 ```
 
 ## Human path
