@@ -113,7 +113,7 @@ function App() {
           />
         )}
         {activeTab === "storage" && <StorageBiometricsTab />}
-        {activeTab === "integrations" && <IntegrationsTab backendUrl={backendUrl} />}
+        {activeTab === "integrations" && <IntegrationsTab backendUrl={backendUrl} initDataRaw={initDataRaw} />}
         {activeTab === "settings" && (
           <SettingsTab
             backendUrl={backendUrl}
