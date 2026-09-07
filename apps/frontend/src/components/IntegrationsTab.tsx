@@ -76,6 +76,8 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl, in
     } finally {
       setMissionLogRunning(false);
     }
+  };
+
   const handleCraftCapture = async (action: "quick_note" | "add_task") => {
     if (!craftText.trim()) return;
     const succeeded = await handleTrigger("craft", action, { text: craftText.trim() });
