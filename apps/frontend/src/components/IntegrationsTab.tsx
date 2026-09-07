@@ -11,6 +11,8 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl, in
   const [triggerStatus, setTriggerStatus] = useState<Record<string, string>>({});
   const [mirrorLeechLink, setMirrorLeechLink] = useState<string>("");
   const [blueskyPostText, setBlueskyPostText] = useState<string>("");
+  const [missionLogStatus, setMissionLogStatus] = useState<string>("");
+  const [missionLogRunning, setMissionLogRunning] = useState<boolean>(false);
   const [craftText, setCraftText] = useState<string>("");
 
   useEffect(() => {
@@ -56,6 +58,24 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl, in
     }
   };
 
+  const handleMissionLog = async () => {
+    setMissionLogRunning(true);
+    setMissionLogStatus("Broadcasting...");
+    try {
+      const res = await fetch(`${backendUrl}/api/mission-log`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMissionLogStatus(`Success: ${JSON.stringify(data.result)}`);
+        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
+      } else {
+        setMissionLogStatus(`Failed: ${data.error || "Unknown error"}`);
+        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("error");
+      }
+    } catch (err: any) {
+      setMissionLogStatus(`Error: ${err.message}`);
+    } finally {
+      setMissionLogRunning(false);
+    }
   const handleCraftCapture = async (action: "quick_note" | "add_task") => {
     if (!craftText.trim()) return;
     const succeeded = await handleTrigger("craft", action, { text: craftText.trim() });
@@ -71,6 +91,22 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl, in
         </button>
       </div>
       <p className="description">Monitor and trigger local/cloud Oneseco pipelines directly from your Telegram Mini App.</p>
+
+      {/* Mission Log Broadcast — chains multiple integrations together */}
+      <section className="card integration-item">
+        <div className="int-header">
+          <h3>🛰️ Mission Log Broadcast</h3>
+        </div>
+        <p className="description">
+          Takes the most recent Tier 5 Oracle narrative from Trill Astro Buzz, voices it via Qwen3-TTS, and posts it to Bluesky — chaining three integrations in one call.
+        </p>
+        <div className="int-actions">
+          <button className="btn btn-primary btn-sm" onClick={handleMissionLog} disabled={missionLogRunning}>
+            📡 Broadcast Latest Mission
+          </button>
+        </div>
+        {missionLogStatus && <pre className="int-log">{missionLogStatus}</pre>}
+      </section>
 
       {loading ? (
         <div className="status-box loading">
