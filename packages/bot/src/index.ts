@@ -1,5 +1,14 @@
-import { initDatabase, getUserProfile, saveUserProfile, logUserActivity, UserProfileData } from "./db.js";
-import { handleIntegrationsRoute, IntegrationsEnv } from "./integrations.js";
+import {
+  initDatabase,
+  getUserProfile,
+  saveUserProfile,
+  logUserActivity,
+  UserProfileData,
+  ensureUserExists,
+  getLatestHighTierNarrative,
+  saveMissionLog,
+} from "./db.js";
+import { handleIntegrationsRoute, IntegrationsEnv, mockQwenAudioUrl, mockBlueskyPostUri } from "./integrations.js";
 import { verifyTelegramInitData } from "./telegramAuth.js";
 import { runAgentChain, formatAgentMessage, AgentEnv } from "./agent.js";
 
