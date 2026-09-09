@@ -10,8 +10,7 @@ Recently merged: PR #9 (AI Plaza doc + a chain of Cloudflare deploy-config fixes
 
 ## Open PRs needing attention
 
-- **#7 — "Prototype a Mission Log Broadcast chaining agent chain -> TTS -> Bluesky"** (`claude/mission-log-prototype`). Real, tested feature work, but its base predates the Craft integration and all the wrangler/build-config fixes — it now has merge conflicts in 7 files (`CLAUDE.md`, `IntegrationsTab.tsx`, both `package.json`s, `packages/bot/src/index.ts`, `packages/bot/src/integrations.ts`, `packages/bot/wrangler.jsonc`). Same shape of conflict as PR #3 had; resolve the same way — merge `main` in, combine both sides rather than picking one, re-run `npm run check-types` before pushing.
-- **#10 — "Add codebase analysis report"** (draft, opened by an external agent called "Jules", not by a Claude session). Adds `ANALYSIS.md`. Draft state — not reviewed, not touched by this session. Worth a look before merging since it wasn't written with the repo's actual conventions in hand (worth cross-checking against `CLAUDE.md` the way PR #7's original description flagged doing).
+No open PRs need attention as of 2026-09-09. #7 (Mission Log Broadcast) merged 2026-09-07, with a follow-up build-break fix in #12. #10 ("Add codebase analysis report", opened by the external agent "Jules") was reviewed, its `ANALYSIS.md` fact-checked against current `main` and corrected, and replaced by #14 — #10 itself was closed as superseded.
 
 ## Known landmines
 
