@@ -89,7 +89,13 @@ Documentation-only changes (`CLAUDE.md`, `AGENTS.md`, `README.md`, code comments
 - The DM/NPC responses in this tab call `/api/rpg/dm` (real Gemini), not a local template engine — don't reintroduce AetherRPG's original `AIAgentEngine` pattern.
 - Auth for `/api/rpg/*` is Telegram `initData`, not AetherRPG's original bcrypt/express-session — never add a username/password flow here.
 
-### 5. Cloudflare Workers Builds (production deploy)
+### 5. Drafts (macOS) Wrangler Action
+- A Drafts.app action script wires ad-hoc `wrangler` commands to this repo: `~/Library/Application Support/DraftsSetup/actions/module5_wrangler_agentic_tma.js`.
+- It hardcodes its working directory to `packages/bot` (not the repo root), matching how `npm run dev:bot`/`deploy:bot` actually run and where the real kv/d1 IDs live.
+- Usage: write a wrangler subcommand as the first line of a draft (e.g. `dev`, `deploy`, `tail`, `d1 execute tma_db --local --command "select 1"`), run the action; output is appended back into the draft.
+- This is a local dev convenience tool only, not part of the repo or CI — don't assume other contributors/agents have it.
+
+### 6. Cloudflare Workers Builds (production deploy)
 - The production Worker (script name `trillastrob`) auto-deploys via Cloudflare's git integration on every push — this is separate from `npm run deploy:bot` and isn't visible in this repo's own CI.
 - The Cloudflare project's Root directory is `packages/bot`, so its build/deploy commands run scoped to that workspace, not the monorepo root. Both the root `package.json` and `packages/bot/package.json` need a `build` script (currently no-ops — `wrangler deploy`/`versions upload` does the actual bundling) or the Workers Builds pipeline fails with `Missing script: "build"`.
 - `packages/bot/wrangler.jsonc`'s `kv_namespaces[].id` and `d1_databases[].database_id` must be real Cloudflare resource IDs, never local-dev placeholders — an invalid ID fails the deploy step, visible only in the Cloudflare dashboard's build log.

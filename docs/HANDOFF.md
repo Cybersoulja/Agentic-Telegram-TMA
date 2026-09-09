@@ -20,6 +20,10 @@ Recently merged: PR #9 (AI Plaza doc + a chain of Cloudflare deploy-config fixes
 - **GitHub wiki is not reachable from this session.** The git proxy used here only authorizes the main repo path, not `<repo>.wiki.git` — confirmed via a 401 from `git clone`. Wiki content has to be pasted in manually via the GitHub web UI; draft pages live only in chat history unless the user saves them.
 - **Real credentials were pasted into chat during a prior session** (Cloudflare API token, a GitHub PAT named "GITHUB_GOD", a Craft API token/URL). None were used for anything beyond the Cloudflare KV/D1 lookups they were needed for at the time. If those tokens are still live, they should be rotated — this note is here so a future session doesn't assume they're safe to reuse from scrollback.
 
+## Local tooling added this session
+
+- A Drafts.app (macOS) action now runs `wrangler` commands scoped to `packages/bot` for this repo: `~/Library/Application Support/DraftsSetup/actions/module5_wrangler_agentic_tma.js` (see AGENTS.md §4). Not part of the repo/CI — purely a local dev convenience, install it manually in Drafts if you want it.
+
 ## Conventions to keep following
 
 - Docs-only changes (`CLAUDE.md`, `AGENTS.md`, `README.md`, this file) go straight to `main`, no PR — per `CLAUDE.md`'s own git workflow section.
