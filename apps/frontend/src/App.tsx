@@ -6,6 +6,7 @@ import { DashboardTab } from "./components/DashboardTab";
 import { StorageBiometricsTab } from "./components/StorageBiometricsTab";
 import { IntegrationsTab } from "./components/IntegrationsTab";
 import { SettingsTab } from "./components/SettingsTab";
+import { RpgTab } from "./components/RpgTab";
 
 const DEFAULT_API_URL = import.meta.env.VITE_API_URL || "http://localhost:8787";
 
@@ -112,6 +113,7 @@ function App() {
             backendUrl={backendUrl}
           />
         )}
+        {activeTab === "rpg" && <RpgTab backendUrl={backendUrl} initDataRaw={initDataRaw} />}
         {activeTab === "storage" && <StorageBiometricsTab />}
         {activeTab === "integrations" && <IntegrationsTab backendUrl={backendUrl} initDataRaw={initDataRaw} />}
         {activeTab === "settings" && (

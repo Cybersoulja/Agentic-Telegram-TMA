@@ -17,12 +17,15 @@ This is a full-stack Telegram Mini App prototype using:
 
 *   `packages/bot/`: Cloudflare Worker bot codebase.
     *   `src/index.ts`: Main request handler (Bot webhook handler, CORS headers, signature validation).
+    *   `src/rpg.ts`, `src/rpgDb.ts`: `/api/rpg/*` routes and D1 storage for the ported AetherRPG game.
     *   `wrangler.jsonc`: Wrangler Worker config.
     *   `.dev.vars.example`: Local environment secrets template.
 *   `apps/frontend/`: React Vite client codebase.
     *   `src/App.tsx`: Main user interface dashboard.
+    *   `src/components/RpgTab.tsx`, `src/components/game/`: the ported AetherRPG RPG tab.
     *   `src/App.css`: Visual styling responsive to Telegram client theme variables.
     *   `src/telegram.d.ts`: TypeScript type definitions for the Telegram WebApp SDK.
+    *   `tailwind.config.ts`: Tailwind config for the RPG tab, theme tokens mapped to the same Telegram CSS variables `App.css` uses.
     *   `index.html`: Entry page loading `telegram-web-app.js`.
 
 ---
@@ -80,7 +83,13 @@ Documentation-only changes (`CLAUDE.md`, `AGENTS.md`, `README.md`, code comments
 - The bot and frontend use separate TS configurations. Ensure that changes in the frontend (`apps/frontend/`) are type-checked with `tsc -b` and changes in the worker (`packages/bot/`) are type-checked with `tsc --noEmit`.
 - Run `npm run check-types` at the root to check both at once.
 
-### 4. Cloudflare Workers Builds (production deploy)
+### 4. RPG tab (`apps/frontend/src/components/RpgTab.tsx`, `components/game/*`, `lib/stores/*`, `packages/bot/src/rpg.ts`)
+- A ported copy of [Cybersoulja/AetherRPG](https://github.com/Cybersoulja/AetherRPG) — see `CLAUDE.md`'s "RPG game" sections (backend and frontend) for the full architecture.
+- Do not port anything from AetherRPG without checking it's actually imported first — its `package.json`/`components/ui/` carried a lot of unused Replit-scaffold weight that should stay out of this repo.
+- The DM/NPC responses in this tab call `/api/rpg/dm` (real Gemini), not a local template engine — don't reintroduce AetherRPG's original `AIAgentEngine` pattern.
+- Auth for `/api/rpg/*` is Telegram `initData`, not AetherRPG's original bcrypt/express-session — never add a username/password flow here.
+
+### 5. Cloudflare Workers Builds (production deploy)
 - The production Worker (script name `trillastrob`) auto-deploys via Cloudflare's git integration on every push — this is separate from `npm run deploy:bot` and isn't visible in this repo's own CI.
 - The Cloudflare project's Root directory is `packages/bot`, so its build/deploy commands run scoped to that workspace, not the monorepo root. Both the root `package.json` and `packages/bot/package.json` need a `build` script (currently no-ops — `wrangler deploy`/`versions upload` does the actual bundling) or the Workers Builds pipeline fails with `Missing script: "build"`.
 - `packages/bot/wrangler.jsonc`'s `kv_namespaces[].id` and `d1_databases[].database_id` must be real Cloudflare resource IDs, never local-dev placeholders — an invalid ID fails the deploy step, visible only in the Cloudflare dashboard's build log.

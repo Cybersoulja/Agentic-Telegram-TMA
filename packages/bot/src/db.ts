@@ -60,7 +60,51 @@ export async function initDatabase(db?: D1Database): Promise<{ success: boolean;
       )
       .run();
 
-    return { success: true, message: "Database tables (users, activity_logs, mission_logs) initialized successfully." };
+    await db
+      .prepare(
+        `CREATE TABLE IF NOT EXISTS rpg_characters (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        telegram_user_id INTEGER NOT NULL,
+        character_data TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`
+      )
+      .run();
+
+    await db
+      .prepare(
+        `CREATE TABLE IF NOT EXISTS rpg_saves (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        telegram_user_id INTEGER NOT NULL,
+        slot INTEGER NOT NULL DEFAULT 1,
+        game_state TEXT NOT NULL,
+        last_saved TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(telegram_user_id, slot)
+      )`
+      )
+      .run();
+
+    await db
+      .prepare(
+        `CREATE TABLE IF NOT EXISTS rpg_leaderboard (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        telegram_user_id INTEGER NOT NULL,
+        character_name TEXT NOT NULL,
+        character_class TEXT NOT NULL,
+        level INTEGER NOT NULL,
+        playtime INTEGER NOT NULL DEFAULT 0,
+        achievements_unlocked INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`
+      )
+      .run();
+
+    return {
+      success: true,
+      message:
+        "Database tables (users, activity_logs, mission_logs, rpg_characters, rpg_saves, rpg_leaderboard) initialized successfully.",
+    };
   } catch (err: any) {
     return { success: false, message: `Failed to initialize D1 tables: ${err.message}` };
   }

@@ -1,6 +1,6 @@
 import React from "react";
 
-export type TabId = "dashboard" | "storage" | "integrations" | "settings";
+export type TabId = "dashboard" | "storage" | "integrations" | "settings" | "rpg";
 
 interface TabBarProps {
   activeTab: TabId;
@@ -9,6 +9,7 @@ interface TabBarProps {
 
 export const TabBar: React.FC<TabBarProps> = ({ activeTab, onSelectTab }) => {
   const tabs: { id: TabId; label: string; icon: string }[] = [
+    { id: "rpg", label: "RPG", icon: "⚔️" },
     { id: "dashboard", label: "Dashboard", icon: "🏠" },
     { id: "storage", label: "Cloud & Bio", icon: "🔐" },
     { id: "integrations", label: "Oneseco Hub", icon: "🤖" },

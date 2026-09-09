@@ -11,8 +11,9 @@ import {
 import { handleIntegrationsRoute, IntegrationsEnv, mockQwenAudioUrl, mockBlueskyPostUri } from "./integrations.js";
 import { verifyTelegramInitData } from "./telegramAuth.js";
 import { runAgentChain, formatAgentMessage, AgentEnv } from "./agent.js";
+import { handleRpgRoute, RpgEnv } from "./rpg.js";
 
-export interface Env extends IntegrationsEnv, AgentEnv {
+export interface Env extends IntegrationsEnv, AgentEnv, RpgEnv {
   TELEGRAM_BOT_TOKEN?: string;
   MINI_APP_URL: string;
   TMA_KV?: KVNamespace;
@@ -50,7 +51,8 @@ export default {
             dbInit: "/api/db/init (GET) - Initialize D1 database tables",
             profile: "/api/profile (GET/POST) - Get/Save user preferences in D1 and KV",
             missionLog: "/api/mission-log (POST) - Broadcast the latest Tier 5 Oracle narrative via TTS + Bluesky",
-            integrations: "/api/integrations/* - Oneseco Hub proxy routes"
+            integrations: "/api/integrations/* - Oneseco Hub proxy routes",
+            rpg: "/api/rpg/* - Aethermoor Chronicles game routes (characters, saves, leaderboard, DM)"
           },
         }),
         { headers: corsHeaders }
@@ -207,6 +209,10 @@ export default {
 
     if (url.pathname.startsWith("/api/integrations/")) {
       return handleIntegrationsRoute(request, env, url, corsHeaders);
+    }
+
+    if (url.pathname.startsWith("/api/rpg/")) {
+      return handleRpgRoute(request, env, url, corsHeaders);
     }
 
     return new Response(JSON.stringify({ error: "Not Found" }), {
