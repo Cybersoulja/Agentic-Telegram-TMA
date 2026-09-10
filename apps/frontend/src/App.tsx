@@ -35,7 +35,7 @@ function App() {
 
       if (webApp.initDataUnsafe?.user) {
         setUser(webApp.initDataUnsafe.user);
-        fetchD1Profile(webApp.initDataUnsafe.user.id);
+        fetchD1Profile(webApp.initData || "");
       } else {
         setMockUser();
       }
@@ -81,9 +81,10 @@ function App() {
     setInitDataRaw("mock_query_id=123&user=mock&auth_date=123&hash=mock");
   };
 
-  const fetchD1Profile = async (userId: number) => {
+  const fetchD1Profile = async (initData: string) => {
+    if (!initData) return;
     try {
-      const res = await fetch(`${backendUrl}/api/profile?userId=${userId}`);
+      const res = await fetch(`${backendUrl}/api/profile?initData=${encodeURIComponent(initData)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.profile) {
@@ -121,7 +122,8 @@ function App() {
             backendUrl={backendUrl}
             onUpdateBackendUrl={setBackendUrl}
             userProfile={user}
-            onRefreshProfile={() => user && fetchD1Profile(user.id)}
+            initDataRaw={initDataRaw}
+            onRefreshProfile={() => fetchD1Profile(initDataRaw)}
           />
         )}
       </main>
