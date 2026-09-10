@@ -4,6 +4,7 @@ interface SettingsTabProps {
   backendUrl: string;
   onUpdateBackendUrl: (url: string) => void;
   userProfile: any;
+  initDataRaw: string;
   onRefreshProfile: () => void;
 }
 
@@ -11,6 +12,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   backendUrl,
   onUpdateBackendUrl,
   userProfile,
+  initDataRaw,
   onRefreshProfile,
 }) => {
   const [customUrl, setCustomUrl] = useState<string>(backendUrl);
@@ -40,7 +42,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       const res = await fetch(`${backendUrl}/api/profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...userProfile, theme_preference: themePref }),
+        body: JSON.stringify({ ...userProfile, theme_preference: themePref, initData: initDataRaw }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
