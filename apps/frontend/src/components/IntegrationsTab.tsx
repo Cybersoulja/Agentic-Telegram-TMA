@@ -62,7 +62,11 @@ export const IntegrationsTab: React.FC<IntegrationsTabProps> = ({ backendUrl, in
     setMissionLogRunning(true);
     setMissionLogStatus("Broadcasting...");
     try {
-      const res = await fetch(`${backendUrl}/api/mission-log`, { method: "POST" });
+      const res = await fetch(`${backendUrl}/api/mission-log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData: initDataRaw }),
+      });
       const data = await res.json();
       if (res.ok && data.success) {
         setMissionLogStatus(`Success: ${JSON.stringify(data.result)}`);

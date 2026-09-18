@@ -9,7 +9,7 @@ import {
   saveMissionLog,
 } from "./db.js";
 import { handleIntegrationsRoute, IntegrationsEnv, mockQwenAudioUrl, mockBlueskyPostUri } from "./integrations.js";
-import { verifyTelegramInitData } from "./telegramAuth.js";
+import { verifyTelegramInitData, authenticateInitData } from "./telegramAuth.js";
 import { runAgentChain, formatAgentMessage, AgentEnv } from "./agent.js";
 import { handleRpgRoute, RpgEnv } from "./rpg.js";
 
@@ -157,20 +157,24 @@ export default {
     }
 
     if (url.pathname === "/api/profile" && request.method === "GET") {
-      const userId = parseInt(url.searchParams.get("userId") || "0", 10);
-      if (!userId) {
-        return new Response(JSON.stringify({ success: false, error: "userId query param required" }), { status: 400, headers: corsHeaders });
-      }
-      const profile = await getUserProfile(env.TMA_DB, env.TMA_KV, userId, ctx);
+      // Auth determines whose profile is returned — a client-supplied userId would let anyone
+      // read anyone else's profile, so it's intentionally not accepted as a query param.
+      const auth = await authenticateInitData(url.searchParams.get("initData"), env, corsHeaders);
+      if (!auth.ok) return auth.response;
+      const profile = await getUserProfile(env.TMA_DB, env.TMA_KV, auth.userId, ctx);
       return new Response(JSON.stringify({ success: true, profile }), { status: 200, headers: corsHeaders });
     }
 
     if (url.pathname === "/api/profile" && request.method === "POST") {
       try {
         const body: any = await request.json();
-        const result = await saveUserProfile(env.TMA_DB, env.TMA_KV, body);
-        if (result.success && body.id) {
-          ctx.waitUntil(logUserActivity(env.TMA_DB, body.id, "update_profile", body));
+        const auth = await authenticateInitData(body.initData, env, corsHeaders);
+        if (!auth.ok) return auth.response;
+        // Force the profile id to the authenticated user rather than trusting the body, so a
+        // caller can never overwrite someone else's D1/KV profile.
+        const result = await saveUserProfile(env.TMA_DB, env.TMA_KV, { ...body, id: auth.userId });
+        if (result.success) {
+          ctx.waitUntil(logUserActivity(env.TMA_DB, auth.userId, "update_profile", body));
         }
         return new Response(JSON.stringify(result), { status: result.success ? 200 : 500, headers: corsHeaders });
       } catch (err: any) {
@@ -179,6 +183,12 @@ export default {
     }
 
     if (url.pathname === "/api/mission-log" && request.method === "POST") {
+      const body: any = await request.json().catch(() => ({}));
+      // Broadcasts the latest system-wide narrative (not per-user data), but still gated so this
+      // public Worker can't be spammed into writing mission_logs rows / mock TTS+Bluesky calls
+      // by anyone who isn't a genuine Mini App launch — same convention as /api/rpg/dm.
+      const auth = await authenticateInitData(body.initData, env, corsHeaders);
+      if (!auth.ok) return auth.response;
       const latest = await getLatestHighTierNarrative(env.TMA_DB, 5);
       if (!latest) {
         return new Response(

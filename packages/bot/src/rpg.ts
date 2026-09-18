@@ -1,4 +1,4 @@
-import { verifyTelegramInitData } from "./telegramAuth.js";
+import { authenticateInitData } from "./telegramAuth.js";
 import { runOracleDice } from "./oracle.js";
 import { callGemini } from "./gemini.js";
 import {
@@ -18,47 +18,6 @@ export interface RpgEnv {
   GEMINI_API_KEY?: string;
 }
 
-interface AuthResult {
-  ok: true;
-  userId: number;
-}
-interface AuthFailure {
-  ok: false;
-  response: Response;
-}
-
-/**
- * Every /api/rpg/* route is gated the same way `craft` is in integrations.ts: a real Cloudflare
- * resource (D1 rows tied to a person, or a billed Gemini call) shouldn't be reachable by anyone
- * who can reach this public Worker — only genuine Telegram Mini App launches.
- */
-async function authenticate(
-  initData: string | null,
-  env: RpgEnv,
-  corsHeaders: Record<string, string>
-): Promise<AuthResult | AuthFailure> {
-  if (!env.TELEGRAM_BOT_TOKEN) {
-    return {
-      ok: false,
-      response: new Response(
-        JSON.stringify({ success: false, error: "Server is not configured for Telegram auth." }),
-        { status: 500, headers: corsHeaders }
-      ),
-    };
-  }
-  const auth = await verifyTelegramInitData(initData || "", env.TELEGRAM_BOT_TOKEN);
-  if (!auth.isValid || !auth.user) {
-    return {
-      ok: false,
-      response: new Response(JSON.stringify({ success: false, error: auth.error || "Unauthorized" }), {
-        status: 403,
-        headers: corsHeaders,
-      }),
-    };
-  }
-  return { ok: true, userId: auth.user.id };
-}
-
 export async function handleRpgRoute(
   request: Request,
   env: RpgEnv,
@@ -71,21 +30,21 @@ export async function handleRpgRoute(
   // GET requests carry initData as a query param (no body); POST requests carry it in the JSON body.
   if (segments[0] === "characters" && request.method === "POST" && segments.length === 1) {
     const body: any = await request.json().catch(() => ({}));
-    const auth = await authenticate(body.initData, env, corsHeaders);
+    const auth = await authenticateInitData(body.initData, env, corsHeaders);
     if (!auth.ok) return auth.response;
     const result = await saveCharacter(env.TMA_DB, auth.userId, body.characterData);
     return new Response(JSON.stringify(result), { status: result.success ? 200 : 500, headers: corsHeaders });
   }
 
   if (segments[0] === "characters" && request.method === "GET" && segments.length === 1) {
-    const auth = await authenticate(url.searchParams.get("initData"), env, corsHeaders);
+    const auth = await authenticateInitData(url.searchParams.get("initData"), env, corsHeaders);
     if (!auth.ok) return auth.response;
     const characters = await getCharacters(env.TMA_DB, auth.userId);
     return new Response(JSON.stringify({ success: true, characters }), { status: 200, headers: corsHeaders });
   }
 
   if (segments[0] === "characters" && request.method === "GET" && segments.length === 2) {
-    const auth = await authenticate(url.searchParams.get("initData"), env, corsHeaders);
+    const auth = await authenticateInitData(url.searchParams.get("initData"), env, corsHeaders);
     if (!auth.ok) return auth.response;
     const characterId = parseInt(segments[1], 10);
     if (!Number.isInteger(characterId) || characterId < 1) {
@@ -106,7 +65,7 @@ export async function handleRpgRoute(
 
   if (segments[0] === "saves" && request.method === "POST" && segments.length === 1) {
     const body: any = await request.json().catch(() => ({}));
-    const auth = await authenticate(body.initData, env, corsHeaders);
+    const auth = await authenticateInitData(body.initData, env, corsHeaders);
     if (!auth.ok) return auth.response;
     const slot = body.slot === undefined ? 1 : Number(body.slot);
     if (!Number.isInteger(slot) || slot < 1) {
@@ -120,7 +79,7 @@ export async function handleRpgRoute(
   }
 
   if (segments[0] === "saves" && request.method === "GET" && segments.length === 2) {
-    const auth = await authenticate(url.searchParams.get("initData"), env, corsHeaders);
+    const auth = await authenticateInitData(url.searchParams.get("initData"), env, corsHeaders);
     if (!auth.ok) return auth.response;
     const slot = parseInt(segments[1], 10);
     if (!Number.isInteger(slot) || slot < 1) {
@@ -143,7 +102,7 @@ export async function handleRpgRoute(
   }
 
   if (segments[0] === "saves" && request.method === "GET" && segments.length === 1) {
-    const auth = await authenticate(url.searchParams.get("initData"), env, corsHeaders);
+    const auth = await authenticateInitData(url.searchParams.get("initData"), env, corsHeaders);
     if (!auth.ok) return auth.response;
     const saves = await getGameSaves(env.TMA_DB, auth.userId);
     return new Response(JSON.stringify({ success: true, saves }), { status: 200, headers: corsHeaders });
@@ -158,7 +117,7 @@ export async function handleRpgRoute(
 
   if (segments[0] === "leaderboard" && request.method === "POST") {
     const body: any = await request.json().catch(() => ({}));
-    const auth = await authenticate(body.initData, env, corsHeaders);
+    const auth = await authenticateInitData(body.initData, env, corsHeaders);
     if (!auth.ok) return auth.response;
     const result = await submitLeaderboardEntry(env.TMA_DB, auth.userId, {
       character_name: body.characterName,
@@ -172,7 +131,7 @@ export async function handleRpgRoute(
 
   if (segments[0] === "dm" && request.method === "POST") {
     const body: any = await request.json().catch(() => ({}));
-    const auth = await authenticate(body.initData, env, corsHeaders);
+    const auth = await authenticateInitData(body.initData, env, corsHeaders);
     if (!auth.ok) return auth.response;
     const response = await generateDmResponse(body, env);
     return new Response(JSON.stringify({ success: true, ...response }), { status: 200, headers: corsHeaders });

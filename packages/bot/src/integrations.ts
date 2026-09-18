@@ -1,4 +1,4 @@
-import { verifyTelegramInitData } from "./telegramAuth.js";
+import { authenticateInitData } from "./telegramAuth.js";
 
 export interface IntegrationsEnv {
   N8N_URL?: string;
@@ -292,19 +292,8 @@ export async function handleIntegrationsRoute(
 
         // CRAFT_API_URL is a bearer credential to a real personal space — require a valid
         // Telegram initData on every write so only genuine app launches can trigger one.
-        if (!env.TELEGRAM_BOT_TOKEN) {
-          return new Response(
-            JSON.stringify({ success: false, service: "Craft", error: "Server is not configured for Telegram auth." }),
-            { status: 500, headers: corsHeaders }
-          );
-        }
-        const initDataAuth = await verifyTelegramInitData(body.initData || "", env.TELEGRAM_BOT_TOKEN);
-        if (!initDataAuth.isValid) {
-          return new Response(
-            JSON.stringify({ success: false, service: "Craft", error: initDataAuth.error || "Unauthorized" }),
-            { status: 403, headers: corsHeaders }
-          );
-        }
+        const auth = await authenticateInitData(body.initData, env, corsHeaders);
+        if (!auth.ok) return auth.response;
 
         const text = payload?.text;
         if (!text) {
